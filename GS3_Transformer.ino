@@ -1,4 +1,4 @@
-#define CURRENT_VERSION "V0.31"
+#define CURRENT_VERSION "V0.32"
 
 /*
 	"GS3 mod EP Transformer" by assafl  

@@ -212,7 +212,7 @@ void gotoSleep()
 	tft.drawRect(1,1,238,318, ILI9341_GREENYELLOW);
 	tft.drawRect(2,2,236,316, ILI9341_YELLOW);
 	tft.drawRect(3,3,234,314, ILI9341_YELLOW);
-	printSomething("GS/3 - Mod Chimera",36, 110, ILI9341_YELLOW, &FreeSans12pt7b, false );
+	printSomething("GS/3 Chimera",56, 110, ILI9341_YELLOW, &FreeSans12pt7b, false );
 	printSomething("Touch screen or", 54, 180, ILI9341_DARKGREY, &FreeSans9pt7b, false );
 	printSomething("GS/3 button to wake",41, 210, ILI9341_DARKGREY, &FreeSans9pt7b, false );
 
