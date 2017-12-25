@@ -13,11 +13,15 @@ byte setPumpSpeedbyMode(int profileIndex, long pullTimer, byte pumpSpeedByte, fl
 			case MANUAL_PULL:
 				int currentPotValue;
 				currentPotValue = analogRead(CONTROL_POT);
+#ifdef OTTO_HTWF 
+				// For otto Controls HTWF-1A12A22A Hall Effect 0-5V paddle control
 				if (currentPotValue < 520)
-					pumpSpeedByte = (byte)map(currentPotValue, 100, 520, 0, (FLBThreshold-1) * 2.55);
+					pumpSpeedByte = (byte)map(currentPotValue, 100, 520, 0, FLBThreshold * 2.55);
 				else
 					pumpSpeedByte = (byte)map(currentPotValue, 520, 950, FLBThreshold * 2.55, pumpMaxPercent * 2.55 );
-			//	pumpSpeedByte = (byte)(analogRead(CONTROL_POT) >> 2); //converts int to byte.
+#else
+				pumpSpeedByte = (byte)(currentPotValue >> 2); //converts int to byte for standard potentiometer control
+#endif
 				break;
 			case AUTO_PWM_PROFILE_PULL:
 				pumpSpeedByte = (byte)(g_PWMProfile[profileIndex]+

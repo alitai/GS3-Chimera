@@ -63,6 +63,10 @@
 // If the output relay inverts (like some modules do) uncomment the next line
 #define INVERT_FLB_OUTPUT
 
+// If using Otto Controls HTWF-1A12A22A Hall Effect 0-5V paddle control instead of potentiometer (same connections)
+// Aligns center indent of paddle with FLB control and Preinfusion
+#define OTTO_HTWF
+
 // Allows control of the unit via CN8 on the 3d5 
 #define SERIAL_CONTROL 
 
