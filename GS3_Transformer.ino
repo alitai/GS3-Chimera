@@ -4,11 +4,11 @@
 	GS/3 "Chimera"  
 	Electronic "Paddle" and profile replay control application for La Marzocco GS/3 AV
 	
-	https://github.com/alitai/GS3-Transformer
- 
 	This software and associated Arduino based hardware converts a GS/3 into a powerful pressure 
 	profiling machine. Furthermore it can mimic (hence "Chimera") all sorts of machines, such as 
 	Slayer like slow preinfusion and abrupt pressure change, etc.
+   
+    New versions can be downloaded from https://github.com/alitai/GS3-Transformer
    
 	Modes supported:
     	Manual (virtual) Paddle - based on potentiometer
