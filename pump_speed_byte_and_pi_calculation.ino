@@ -11,7 +11,13 @@ byte setPumpSpeedbyMode(int profileIndex, long pullTimer, byte pumpSpeedByte, fl
 		switch(g_pullMode)
 		{
 			case MANUAL_PULL:
-				pumpSpeedByte = (byte)(analogRead(CONTROL_POT) >> 2); //converts int to byte.
+				int currentPotValue;
+				currentPotValue = analogRead(CONTROL_POT);
+				if (currentPotValue < 520)
+					pumpSpeedByte = (byte)map(currentPotValue, 100, 520, 0, (FLBThreshold-1) * 2.55);
+				else
+					pumpSpeedByte = (byte)map(currentPotValue, 520, 950, FLBThreshold * 2.55, pumpMaxPercent * 2.55 );
+			//	pumpSpeedByte = (byte)(analogRead(CONTROL_POT) >> 2); //converts int to byte.
 				break;
 			case AUTO_PWM_PROFILE_PULL:
 				pumpSpeedByte = (byte)(g_PWMProfile[profileIndex]+

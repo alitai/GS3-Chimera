@@ -11,7 +11,7 @@ void menuSetupSlayerParameters()
 			{
 // Assaf extended the range from 45 to 70 seconds 			
 			//	slayerPIPeriod = map(currentPotValue, 0, 1023, 4, 45); // 5 - 45 seconds
-				slayerPIPeriod = map(currentPotValue, 0, 1023, 4, 70); // 5 - 70 seconds
+				slayerPIPeriod = map(currentPotValue, 100, 950, 4, 70); // 100-950 for HTWF-1A22A12A 4 - 70 seconds
 				graphDrawSlayerProfile(); // Updates the graph with the new data...
 			}
 			break;

@@ -169,7 +169,7 @@ VNH5019MotorShieldMega md = VNH5019MotorShieldMega(INA1, INB1, EN1DIAG1, CS1);
 // Slayer PI Flow rate ml/minute (for display only!)
 // Slayer PI Period in seconds
 
-byte FLBThreshold = 15, pumpMaxPWM = 210, pumpMinPWM = 0, debounceCount = 3, slayerPIFlowRate = 5, slayerMainPWM = 28, slayerPIPeriod = 15, slayerMaxPWM = 45; 
+byte FLBThreshold = 15, pumpMaxPWM = 210, pumpMinPWM = 0, pumpMaxPercent = 45, debounceCount = 3, slayerPIFlowRate = 5, slayerMainPWM = 28, slayerPIPeriod = 15, slayerMaxPWM = 45; 
 float mlPerFlowMeterPulse = 0.48f; // 0.42f;// ml/pulse
 float mlPerFlowMeterPulsePreInfusion = 0.34f; // 0.42f;// ml/pulse
 double unionThreshold = 3.0d; // in bar - at this point the system will switch from FP to PP
