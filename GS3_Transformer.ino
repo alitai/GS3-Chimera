@@ -1,8 +1,10 @@
-#define CURRENT_VERSION "V0.32"
+#define CURRENT_VERSION "V0.33"
 
 /*
-	"GS3 mod EP Transformer" by assafl  
+	GS/3 "Chimera"  
 	Electronic "Paddle" and profile replay control application for La Marzocco GS/3 AV
+	
+	https://github.com/alitai/GS3-Transformer
  
 	This software and associated Arduino based hardware converts a GS/3 into a powerful pressure 
 	profiling machine. Furthermore it can mimic (hence "Chimera") all sorts of machines, such as 
@@ -54,6 +56,9 @@
 		Removed Motor Current
 		Condensed Dashboard view
 		Enlarged graph view
+		
+	v0.33
+		Added support for Otto Controls HTWF Hall Effect control paddle with center indent aligned to FLB threshold (PI until center indent, main pull beyond it)
 		
 */
   
