@@ -28,13 +28,13 @@ void menuDrawSoftKeys(char* softKey2Label, boolean isSoftKey2Selected, char* sof
 	{
 		tft.fillRoundRect(31,286,85,28,3,ILI9341_DARKGREEN);
 		tft.drawRoundRect(29,284,87,32,3,ILI9341_WHITE);
-		tft.setTextColor(ILI9341_WHITE);
+		tft.setTextColor(text_light_Color);
 	} 
 	else
 	{
-		tft.fillRoundRect(31,286,85,28,3,ILI9341_BLACK);
+		tft.fillRoundRect(31,286,85,28,3,bg_Color);
 		tft.drawRoundRect(29,284,87,32,3,ILI9341_DARKGREY);
-		tft.setTextColor(ILI9341_DARKGREY);
+		tft.setTextColor(text_dark_Color);
 	}
 
 	// Print label text centered on soft key 2
@@ -48,13 +48,13 @@ void menuDrawSoftKeys(char* softKey2Label, boolean isSoftKey2Selected, char* sof
 	{
 		tft.fillRoundRect(126, 286, 85, 28, 3, ILI9341_DARKGREEN);
 		tft.drawRoundRect(124, 284, 87, 32, 3, ILI9341_WHITE);  
-		tft.setTextColor(ILI9341_WHITE);
+		tft.setTextColor(text_light_Color);
 	}
 	else 
 	{
-		tft.fillRoundRect(126, 286, 85, 28, 3, ILI9341_BLACK);
+		tft.fillRoundRect(126, 286, 85, 28, 3, bg_Color);
 		tft.drawRoundRect(124, 284, 87, 32, 3,ILI9341_DARKGREY);
-		tft.setTextColor(ILI9341_DARKGREY);
+		tft.setTextColor(text_dark_Color);
 	} 
 
 	// Print label text centered on soft key 3
@@ -70,7 +70,7 @@ void menuDrawNavArrows()
 		tft.fillTriangle(9,300,19,308,19,292,ILI9341_GREEN);
 	else
 	{
-		tft.fillTriangle(9,300,19,308,19,292,ILI9341_BLACK);
+		tft.fillTriangle(9,300,19,308,19,292,bg_Color);
 		tft.drawTriangle(9,300,19,308,19,292,ILI9341_DARKGREEN);
 	}
 
@@ -78,7 +78,7 @@ void menuDrawNavArrows()
 		tft.fillTriangle(231,300,221,308,221,292,ILI9341_GREEN);
 	else
 	{
-		tft.fillTriangle(231,300,221,308,221,292,ILI9341_BLACK);
+		tft.fillTriangle(231,300,221,308,221,292,bg_Color);
 		tft.drawTriangle(231,300,221,308,221,292,ILI9341_DARKGREEN);
 	}
 }

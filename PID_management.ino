@@ -46,7 +46,7 @@ byte executePID_P(int profileIndex, byte pumpSpeedByte, float currentPressure, u
 	if (pressurePID.Compute())
     {
 		printSomething("Pressure", 190,188, ILI9341_CYAN, NULL, true);
-		tft.fillRect(216, 200, 28, 36, ILI9341_BLACK);
+		tft.fillRect(216, 200, 28, 36, bg_Color);
 		printSomething("SP=", 190, 200 , ILI9341_CYAN, NULL , false); 
 		tft.setCursor(216,200);
 		tft.print((int)g_PIDSetpoint_P);
@@ -75,7 +75,7 @@ byte executePID_F(int profileIndex, byte pumpSpeedByte, int sumFlowProfile, unsi
 	if(flowPID.Compute())
 		{
 			printSomething("Flow    ", 190,188, ILI9341_GREEN, NULL, true);
-			tft.fillRect(216, 200, 28, 36, ILI9341_BLACK);
+			tft.fillRect(216, 200, 28, 36, bg_Color);
 			printSomething("SP=", 190, 200 , ILI9341_GREEN, NULL , false);  
 			tft.setCursor(216,200);
 			tft.print((int)g_PIDSetpoint_F);
@@ -149,7 +149,7 @@ byte executeSlayerPID_F(int profileIndex, byte pumpSpeedByte, int sumFlowProfile
 	if(flowPID.Compute())
 		{
 			printSomething("Flow    ", 190,188, ILI9341_GREEN, NULL, true);
-			tft.fillRect(216, 200, 28, 36, ILI9341_BLACK);
+			tft.fillRect(216, 200, 28, 36, bg_Color);
 			printSomething("SP=", 190, 200 , ILI9341_GREEN, NULL , false);  
 			tft.setCursor(216,200);
 			tft.print((int)g_PIDSetpoint_F);

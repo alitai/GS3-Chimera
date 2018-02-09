@@ -1,7 +1,7 @@
 //********************************************************************
 //  Print something somewhere....
 //
-//  Example: printSomething("text here", 0, 14, ILI9341_DARKGREY, &FreeSans9pt7b, false ); 
+//  Example: printSomething("text here", 0, 14, text_dark_Color, &FreeSans9pt7b, false ); 
 //  Use NULL for default font
 //
 //  COLOR LIST:
@@ -24,7 +24,7 @@ void printSomething(char* text, unsigned x, unsigned y, char* selectedColor, con
 		int  x1, y1;
 		unsigned w, h;
 		tft.getTextBounds(text, x, y, &x1, &y1, &w, &h);
-		tft.fillRect(x1, y1, w, h, ILI9341_BLACK);
+		tft.fillRect(x1, y1, w, h, bg_Color);
 	}
 	tft.setCursor(x, y);
 	tft.print(text);

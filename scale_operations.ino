@@ -1,5 +1,6 @@
 void manageScaleConnection()
 {
+#ifdef ACAIA_LUNAR_INTEGRATION
 	if (!scaleConnected)
 	{
 		if (millis() > scaleReconnectionTimer + 1000) 
@@ -13,7 +14,8 @@ void manageScaleConnection()
 	{
 	scaleConnected = scale->isScaleConnected();
 	scaleReconnectionTimer = millis();
-	}			
+	}	
+#endif	
 }
 
 	
@@ -27,7 +29,8 @@ else if(scaleActive && millis() > 10000 + scaleIdleTimer )
 
 //check if there is a Portafilter to do a custom dose.
 void updateDoseWeight()
-{			
+{	
+#ifdef ACAIA_LUNAR_INTEGRATION		
 	if(scaleConnected)
 		{
 		updateWeight();
@@ -53,10 +56,12 @@ void updateDoseWeight()
 			}
 		}
 	}
+#endif
 }
 		
 boolean updateWeight()
 {  
+#ifdef ACAIA_LUNAR_INTEGRATION
 	if (scaleConnected)
 	{
 		manageScaleConnection();
@@ -70,19 +75,24 @@ boolean updateWeight()
 			return true;
 		}
 	}
+#endif
 	return false; 
 }
 
 void disconnectScale()
 {
+#ifdef ACAIA_LUNAR_INTEGRATION
 	scale->disconnect();
 	scaleConnected = scale->isScaleConnected();
+#endif
 }
 
 void connectScale()
 {
+#ifdef ACAIA_LUNAR_INTEGRATION
 	scale = new Scale();
 	scale->connect();
 	scaleConnected = scale->isScaleConnected();
 	scaleReconnectionTimer = millis();
+#endif
 }

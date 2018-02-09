@@ -59,6 +59,11 @@
 		
 	v0.33
 		Added support for Otto Controls HTWF Hall Effect control paddle with center indent aligned to FLB threshold (PI until center indent, main pull beyond it)
+	
+	v0.34
+		Added color variable support
+		Corrected some Acaia Lunar support enable/disable issues
+		Added support for ITEAD and other non Adafruit displays (larger, but the displays aren't of similar quality)
 		
 */
   
@@ -129,13 +134,53 @@
 #define LOW_CALIBRATION_PRESSURE 30 // x10 in bar - so for 3.0 bar write 30
 #define HIGH_CALIBRATION_PRESSURE 90 // x10 in bar - so for 9.0 bar write 90
 
+#define LCD_CS 38 // Chip Select goes to Analog 3
+#define LCD_CD 39 // Command/Data goes to Analog 2
+#define LCD_WR 40 // LCD Write goes to Analog 1
+#define LCD_RD 41 // LCD Read goes to Analog 0
+//#define LCD_RESET A4 // Can alternately just connect to Arduino's reset pin
+
+// Color definitions
+#define ILI9341_BLACK       0x0000      /*   0,   0,   0 */
+#define ILI9341_NAVY        0x000F      /*   0,   0, 128 */
+#define ILI9341_DARKGREEN   0x03E0      /*   0, 128,   0 */
+#define ILI9341_DARKCYAN    0x03EF      /*   0, 128, 128 */
+#define ILI9341_MAROON      0x7800      /* 128,   0,   0 */
+#define ILI9341_PURPLE      0x780F      /* 128,   0, 128 */
+#define ILI9341_OLIVE       0x7BE0      /* 128, 128,   0 */
+#define ILI9341_LIGHTGREY   0xC618      /* 192, 192, 192 */
+#define ILI9341_DARKGREY    0x7BEF      /* 128, 128, 128 */
+#define ILI9341_BLUE        0x001F      /*   0,   0, 255 */
+#define ILI9341_GREEN       0x07E0      /*   0, 255,   0 */
+#define ILI9341_CYAN        0x07FF      /*   0, 255, 255 */
+#define ILI9341_RED         0xF800      /* 255,   0,   0 */
+#define ILI9341_MAGENTA     0xF81F      /* 255,   0, 255 */
+#define ILI9341_YELLOW      0xFFE0      /* 255, 255,   0 */
+#define ILI9341_WHITE       0xFFFF      /* 255, 255, 255 */
+#define ILI9341_ORANGE      0xFD20      /* 255, 165,   0 */
+#define ILI9341_GREENYELLOW 0xAFE5      /* 173, 255,  47 */
+#define ILI9341_PINK        0xF81F
+
+//UTFT myGLCD(ILI9341_16,38,39,40,41);
+
+
+#include <SPI.h>          // f.k. for Arduino-1.5.2
+
 #include <Average.h> 
 #include "SPI.h"
 #include "Adafruit_GFX.h"
-#include "Adafruit_ILI9341.h"
+//#include "PDQ_GFX.h"
+//#include "Adafruit_ILI9341.h"
+//MCU Friend allows 16 bit parallel
+#include <MCUFRIEND_kbv.h>
+//PDQ Fast Serial (doesn't work)
+//#include "PDQ_ILI9341_config.h"
+//#include "PDQ_ILI9341.h"
+
 #include "Fonts/FreeSans9pt7b.h"
 #include "Fonts/FreeSans12pt7b.h"
-#include "Adafruit_STMPE610.h"
+//#include "Adafruit_STMPE610.h"
+#include <XPT2046_Touchscreen.h>
 #include "VNH5019MotorShieldMega.h"
 #include <PID_v1_GS3_EP.h>
 #include <EEPROM.h>
@@ -154,17 +199,95 @@
 #define RED_LED 5 // D5 - LED lights RED during standby
 #define EN1DIAG1 6 // D6 - VNH5019 Motor driver default
 #define GREEN_LED 7 // D7 - LED lights GREEN during a pull
-#define STMPE_CS 8 //  D8 - Adafruit TS CS
+#define TS_CS 8 //  D8 - TouchScreen CS
 #define TFT_DC 9 // D9 - Adafruit TFT DC
 #define TFT_CS 10 // D10 - Adafruit TFT CS
 //  _PWM1 = 11      // D11 - VNH5019 Motor driver default set in VNH5019MotorShieldMega.h file
 #define INA1 12  // VNH5019 Motor driver - Move INA1 from D2 to D12 to allow pin 2 (INT0) use as an interrupt for the flow meter
 #define FLOW_LIMIT_BYPASS 13 // D13 - Digital output to flow control bypass solenoid (0V - flow limited; 5V - bypass enabled)
 
+/*
+ITEAD 3.2" MEGA shield
+D2 - T_IRQ 
+D3 - T_DOUT 
+D4 - T_DIN 
+D5 - T_CS 
+D6 - T_CLK 
+D22 DB8 
+D23 DB9 
+D24 DB10 
+D25 DB11 
+D26 DB12 
+D27 DB13 
+D28 DB14 
+D29 DB15 
+D30 DB7 
+D31 DB6 
+D32 DB5 
+D33 DB4 
+D34 DB3 
+D35 DB2 
+D36 DB1 
+D37 DB0 
+D38 RS 
+D39 WR 
+D40 CS 
+D41 RST 
+D50 SD_MISO 
+D51 SD_MOSI 
+D52 SD_SCK 
+D53 SD_NSS 
+*/
+
 // Touchpad driver
-Adafruit_STMPE610 ts = Adafruit_STMPE610(STMPE_CS);
+#define TFT_TOUCH
+//#define TS_XPT2046
+//#define TS_STMPE
+#ifdef TFT_TOUCH
+// These are the pins used to interface between the 2046 touch controller and Arduino Mega
+#define DOUT 44 // 3  /* Data out pin (T_DO) of touch screen */
+#define DIN  46 //4  /* Data in pin (T_DIN) of touch screen */
+#define DCS  8  /* Chip select pin (T_CS) of touch screen */
+#define DCLK 48 //6  /* Clock pin (T_CLK) of touch screen */
+
+// These are the default min and maximum values, set to 0 and 4095 to test the screen
+#define HMIN 0
+#define HMAX 4095
+#define VMIN 0
+#define VMAX 4095
+#define XYSWAP 0 // 0 or 1
+
+// This is the screen size for the raw to coordinate transformation
+// width and height specified for landscape orientation
+#define HRES 320 /* Default screen resulution for X axis */
+#define VRES 320 /* Default screen resulution for Y axis */
+
+#include <TFT_Touch.h>
+
+/* Create an instance of the touch screen library */
+TFT_Touch ts = TFT_Touch(DCS, DCLK, DIN, DOUT);
+
+#endif
+
+#ifdef TS_STMPE
+Adafruit_STMPE610 ts = Adafruit_STMPE610(TS_CS);
+#endif
+#ifdef TS_XPT2046
+// MOSI=11, MISO=12, SCK=13
+XPT2046_Touchscreen ts(TS_CS);
+//#define TIRQ_PIN  2
+//XPT2046_Touchscreen ts(CS_PIN);  // Param 2 - NULL - No interrupts
+//XPT2046_Touchscreen ts(CS_PIN, 255);  // Param 2 - 255 - No interrupts
+//XPT2046_Touchscreen ts(CS_PIN, TIRQ_PIN);  // Param 2 - Touch IRQ Pin - interrupt enabled polling
+#endif
+TS_Point p;
+
+
+
 // Graphics driver
-Adafruit_ILI9341 tft = Adafruit_ILI9341(TFT_CS, TFT_DC);
+MCUFRIEND_kbv tft;
+//Adafruit_ILI9341 tft = Adafruit_ILI9341(TFT_CS, TFT_DC);
+//PDQ_ILI9341 tft; //
 // Motor PWM controller is an automotive VNH5019 bridge. 20kHz PWM freauency is used as below. Please note the libray was modified to support  
 // a single VNH5019 chip (instead of dusal chips)
 // https://forum.pololu.com/t/modified-vnh5019-shield-library-for-20khz-pwm-with-mega/5178/2
@@ -273,8 +396,11 @@ char* flow_BGColor = ILI9341_DARKGREEN;
 char* flowRate_Color = ILI9341_GREENYELLOW;
 char* weight_Color = ILI9341_ORANGE;
 char* timer_Color = ILI9341_YELLOW;
-
-
+char* text_light_Color = ILI9341_WHITE;
+char* text_dark_Color = ILI9341_WHITE;
+char* bg_Color = ILI9341_BLACK;
+char* axis_minor_Color = ILI9341_LIGHTGREY;
+char* axis_major_Color = ILI9341_WHITE;
 
 
 //********************************************************************
@@ -318,13 +444,19 @@ void setup()
 	pinMode(GREEN_LED, OUTPUT);
 	pinMode(RED_LED, OUTPUT);
 	digitalWrite(RED_LED, HIGH);
+	Serial.begin(38400);
+	Serial.println("Chimera started... ");
 	
 	initFlowLimitBypass();
 
 	// Initialize hardware
 	md.init(); // Initialize VNH5019 motor driver
 	tft.begin(); // Initialize Adafruit ILI9341 based 2.8" display
-	ts.begin(); // Initialize Adafruit STMPE610 based resistive touchscreen
+//	tft.setRotation(2);
+	//ts.begin(); // Initialize Adafruit STMPE610 based resistive touchscreen
+
+    ts.setCal(HMIN, HMAX, VMIN, VMAX, HRES, VRES, XYSWAP); // Raw xmin, xmax, ymin, ymax, width, height
+    ts.setRotation(1);
 
 	//Read parameters and saved profiles from EEPROM. Initialize EEPROM if new...
 	if (EEPROM.read(99) == 201 && EEPROM.read(98) == 201 && EEPROM.read(97) == 201) //EEPROM has valid information
@@ -369,7 +501,7 @@ void loop(void)
 	int unionSkew; // alignment delta between pressure profile and union threshold point
 	boolean preInfusion = false;
 #ifdef ACAIA_LUNAR_INTEGRATION		
-	while(currentDose != DEFAULT_DOSE_FOR_EBF && scaleWeight > 10 && scaleConnected && !ts.touched()) //Pause next pull until demitasse removed 
+	while(currentDose != DEFAULT_DOSE_FOR_EBF && scaleWeight > 10 && scaleConnected /*&& !ts.touched()*/ && ts.Pressed()) //Pause next pull until demitasse removed 
 		{
 			updateWeight();
 			measurePressure();
@@ -382,10 +514,10 @@ void loop(void)
 					break;
 			}
 		}
-#endif
 	currentDose = DEFAULT_DOSE_FOR_EBF;
 	lastCurrentDose = 0;
 	lastScaleWeight = 0;
+#endif
 	sleepTimerReset();
 
 	//*****************************************************************************

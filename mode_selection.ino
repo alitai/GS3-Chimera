@@ -125,7 +125,7 @@ void pullModeSwitching(byte softKey)
 		case 5:
 			if (softKey == 1) // Clear setupParameter editing display and go back to standard operation mode.....
 			{
-				tft.fillRect(0, 0, 240, 140, ILI9341_BLACK);
+				tft.fillRect(0, 0, 240, 140, bg_Color);
 				dashboardSetup();
 			}
 			if (softKey == 2)
@@ -136,7 +136,7 @@ void pullModeSwitching(byte softKey)
 			else if (softKey == 3)
 			{
 				g_debugDisplay = true;
-				tft.fillRect(0, 0, 240, 140, ILI9341_BLACK);
+				tft.fillRect(0, 0, 240, 140, bg_Color);
 			}
 			menuDrawSoftKeys("Normal", !g_debugDisplay, "Debug", g_debugDisplay);
 			break;
@@ -144,7 +144,7 @@ void pullModeSwitching(byte softKey)
 		case 6:
 			if (softKey == 4) // Enter setupParameter mode...
 			{
-				tft.fillRect(0, 0, 240, 140, ILI9341_BLACK);
+				tft.fillRect(0, 0, 240, 140, bg_Color);
 				g_selectedParameter = 0;
 				menuSetupSystemParameters();
 			}
@@ -207,19 +207,20 @@ void fastModeSwitch()
 
 void gotoSleep()
 {
-	tft.fillScreen(ILI9341_BLACK);
+	tft.fillScreen(bg_Color);
 	tft.drawRect(0,0,240,320, ILI9341_GREENYELLOW); // 240x320
 	tft.drawRect(1,1,238,318, ILI9341_GREENYELLOW);
 	tft.drawRect(2,2,236,316, ILI9341_YELLOW);
 	tft.drawRect(3,3,234,314, ILI9341_YELLOW);
 	printSomething("GS/3 Chimera",50, 110, ILI9341_YELLOW, &FreeSans12pt7b, false );
-	printSomething("Touch screen or", 54, 180, ILI9341_DARKGREY, &FreeSans9pt7b, false );
-	printSomething("GS/3 button to wake",41, 210, ILI9341_DARKGREY, &FreeSans9pt7b, false );
+	printSomething("Touch screen or", 54, 180, text_dark_Color, &FreeSans9pt7b, false );
+	printSomething("GS/3 button to wake",41, 210, text_dark_Color, &FreeSans9pt7b, false );
 
 #ifdef ACAIA_LUNAR_INTEGRATION	
 	disconnectScale();
 #endif
-	while (!ts.touched()) //wait until ts touched or 3d5 button pressed...
+	//while (!ts.touched()) //wait until ts touched or 3d5 button pressed...
+	while(ts.Pressed())
 	{
 #ifdef SERIAL_CONTROL
 		if (Serial2.available()) //wait until 3d5 button pressed...

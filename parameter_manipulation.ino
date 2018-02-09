@@ -37,12 +37,12 @@ void menuSetupSystemParameters()
 		{
 			FLBThreshold = map(currentPotValue, 0, 1023, 0, 50);
 			graphDrawCurrentProfiles(); // Updates the graph with the new data... 
-			tft.fillRect(120, 0, 120, 10, ILI9341_BLACK);
+			tft.fillRect(120, 0, 120, 10, bg_Color);
 		}
-		printSomething("FLBThreshold = ", 0, 0, ILI9341_WHITE, NULL , false);
+		printSomething("FLBThreshold = ", 0, 0, text_light_Color, NULL , false);
 	}
 	else
-		printSomething("FLBThreshold = ", 0, 0, ILI9341_DARKGREY, NULL , false);
+		printSomething("FLBThreshold = ", 0, 0, text_dark_Color, NULL , false);
 	tft.setCursor(120,0);
 	tft.print(FLBThreshold);
 	tft.print(" Vm in %");
@@ -52,12 +52,12 @@ void menuSetupSystemParameters()
 		if (potMoved)
 		{
 			debounceCount = map(currentPotValue, 0, 1023, 0, 20);
-			tft.fillRect(120, 12, 120, 10, ILI9341_BLACK);
+			tft.fillRect(120, 12, 120, 10, bg_Color);
 		}
-		printSomething("debounceCount = ", 0, 12, ILI9341_WHITE, NULL , false);
+		printSomething("debounceCount = ", 0, 12, text_light_Color, NULL , false);
 	}
 	else
-		printSomething("debounceCount = ", 0, 12, ILI9341_DARKGREY, NULL , false);
+		printSomething("debounceCount = ", 0, 12, text_dark_Color, NULL , false);
 	tft.setCursor(120,12);
 	tft.print(debounceCount);
 	
@@ -66,12 +66,12 @@ void menuSetupSystemParameters()
 		if (potMoved)
 		{
 			pumpMinPWM = map(currentPotValue, 0, 1023, 0, 255);
-			tft.fillRect(120, 24, 120, 10, ILI9341_BLACK);
+			tft.fillRect(120, 24, 120, 10, bg_Color);
 		}	
-		printSomething("pumpMinPWM = ", 0, 24, ILI9341_WHITE, NULL, false);
+		printSomething("pumpMinPWM = ", 0, 24, text_light_Color, NULL, false);
 	}
 	else
-		printSomething("pumpMinPWM = ", 0, 24, ILI9341_DARKGREY, NULL, false);
+		printSomething("pumpMinPWM = ", 0, 24, text_dark_Color, NULL, false);
 	tft.setCursor(120,24);
 	tft.print(pumpMinPWM);
 	 
@@ -81,12 +81,12 @@ void menuSetupSystemParameters()
 		if (potMoved)
 		{
 			pumpMaxPWM = map(currentPotValue, 0, 1023, 0, 255);
-			tft.fillRect(120, 36, 120, 10, ILI9341_BLACK);  
+			tft.fillRect(120, 36, 120, 10, bg_Color);  
 		}
-		printSomething("pumpMaxPWM = ", 0, 36, ILI9341_WHITE, NULL, false);
+		printSomething("pumpMaxPWM = ", 0, 36, text_light_Color, NULL, false);
 	}
 	else
-		printSomething("pumpMaxPWM = ", 0, 36, ILI9341_DARKGREY, NULL, false);
+		printSomething("pumpMaxPWM = ", 0, 36, text_dark_Color, NULL, false);
 	tft.setCursor(120,36);
 	tft.print(pumpMaxPWM);
 	
@@ -95,12 +95,12 @@ void menuSetupSystemParameters()
 		if (potMoved)
 		{
 			mlPerFlowMeterPulse = ((float)map(currentPotValue, 0, 1023, 0, 10))/1000;
-			tft.fillRect(120, 48, 120, 10, ILI9341_BLACK);  
+			tft.fillRect(120, 48, 120, 10, bg_Color);  
 		}
-		printSomething("ml/pulse = ", 0, 48, ILI9341_WHITE, NULL, false);
+		printSomething("ml/pulse = ", 0, 48, text_light_Color, NULL, false);
 	}
 	else
-		printSomething("ml/pulse = ", 0, 48, ILI9341_DARKGREY, NULL, false);
+		printSomething("ml/pulse = ", 0, 48, text_dark_Color, NULL, false);
 	tft.setCursor(120,48);
 	tft.print(mlPerFlowMeterPulse);
 	tft.print(" ml/Pulse"); 
@@ -110,12 +110,12 @@ void menuSetupSystemParameters()
 		if (potMoved)
 		{
 			unionThreshold = ((float)map(currentPotValue, 0, 1023, 0, 900))/1000;
-			tft.fillRect(120, 60, 120, 10, ILI9341_BLACK);
+			tft.fillRect(120, 60, 120, 10, bg_Color);
 		}
-		printSomething("unionThreshold = ", 0 , 60, ILI9341_WHITE, NULL, false);
+		printSomething("unionThreshold = ", 0 , 60, text_light_Color, NULL, false);
 	}
 	else
-		printSomething("unionThreshold = ", 0 , 60, ILI9341_DARKGREY, NULL, false);
+		printSomething("unionThreshold = ", 0 , 60, text_dark_Color, NULL, false);
 	tft.setCursor(120,60);
 	tft.print(unionThreshold);
 	tft.print(" bar");  
@@ -125,12 +125,12 @@ void menuSetupSystemParameters()
 		if (potMoved)
 		{
 			Kpp = ((double)map(currentPotValue, 0, 1023, 0, 1000))/50;
-			tft.fillRect(60, 75, 60, 10, ILI9341_BLACK);
+			tft.fillRect(60, 75, 60, 10, bg_Color);
 		}
-		printSomething("Kpp = ", 0 , 75, ILI9341_WHITE, NULL, false);
+		printSomething("Kpp = ", 0 , 75, text_light_Color, NULL, false);
 	}
 	else
-		printSomething("Kpp = ", 0 , 75, ILI9341_DARKGREY, NULL, false);
+		printSomething("Kpp = ", 0 , 75, text_dark_Color, NULL, false);
 	tft.setCursor(60,75);
 	tft.print(Kpp);
 			
@@ -139,13 +139,13 @@ void menuSetupSystemParameters()
 		if (potMoved)
 		{
 			Kpi = ((double)map(currentPotValue, 0, 1023, 0, 1000))/50;
-			tft.fillRect(60, 87, 60, 10, ILI9341_BLACK);
+			tft.fillRect(60, 87, 60, 10, bg_Color);
 		}
-		printSomething("Kpi = ", 0 , 87, ILI9341_WHITE, NULL, false);
+		printSomething("Kpi = ", 0 , 87, text_light_Color, NULL, false);
 		
 	}
 	else
-		printSomething("Kpi = ", 0 , 87, ILI9341_DARKGREY, NULL, false);
+		printSomething("Kpi = ", 0 , 87, text_dark_Color, NULL, false);
 	tft.setCursor(60,87);
 	tft.print(Kpi);
 	
@@ -154,12 +154,12 @@ void menuSetupSystemParameters()
 		if (potMoved)
 		{
 			Kpd = ((double)map(currentPotValue, 0, 1023, 0, 1000))/50;
-			tft.fillRect(60, 99, 60, 10, ILI9341_BLACK);  
+			tft.fillRect(60, 99, 60, 10, bg_Color);  
 		}
-		printSomething("Kpd = ", 0 , 99, ILI9341_WHITE, NULL, false);
+		printSomething("Kpd = ", 0 , 99, text_light_Color, NULL, false);
 	}
 	else
-		printSomething("Kpd = ", 0 , 99, ILI9341_DARKGREY, NULL, false);
+		printSomething("Kpd = ", 0 , 99, text_dark_Color, NULL, false);
 	tft.setCursor(60,99);
 	tft.print(Kpd);
 	
@@ -168,12 +168,12 @@ void menuSetupSystemParameters()
 		if (potMoved)
 		{
 			Kfp = ((double)map(currentPotValue, 0, 1023, 0, 1000))/50;
-			tft.fillRect(180, 75, 60, 10, ILI9341_BLACK);
+			tft.fillRect(180, 75, 60, 10, bg_Color);
 		}
-		printSomething("Kfp = ", 120 , 75, ILI9341_WHITE, NULL, false);
+		printSomething("Kfp = ", 120 , 75, text_light_Color, NULL, false);
 	}
 	else
-		printSomething("Kfp = ", 120 , 75, ILI9341_DARKGREY, NULL, false);
+		printSomething("Kfp = ", 120 , 75, text_dark_Color, NULL, false);
 	tft.setCursor(180,75);
 	tft.print(Kfp);
 	
@@ -182,12 +182,12 @@ void menuSetupSystemParameters()
 		if (potMoved)
 		{
 			Kfi = ((double)map(currentPotValue, 0, 1023, 0, 1000))/50;
-			tft.fillRect(180, 87, 60, 10, ILI9341_BLACK);
+			tft.fillRect(180, 87, 60, 10, bg_Color);
 		}
-		printSomething("Kfi = ", 120 , 87, ILI9341_WHITE, NULL, false);
+		printSomething("Kfi = ", 120 , 87, text_light_Color, NULL, false);
 	}
 	else
-		printSomething("Kfi = ", 120 , 87, ILI9341_DARKGREY, NULL, false);
+		printSomething("Kfi = ", 120 , 87, text_dark_Color, NULL, false);
 	tft.setCursor(180,87);
 	tft.print(Kfi);
 	
@@ -196,12 +196,12 @@ void menuSetupSystemParameters()
 		if (potMoved)
 		{
 			Kfd = ((double)map(currentPotValue, 0, 1023, 0, 1000))/50;
-			tft.fillRect(180, 99, 60, 10, ILI9341_BLACK);
+			tft.fillRect(180, 99, 60, 10, bg_Color);
 		}
-		printSomething("Kfd = ", 120 , 99, ILI9341_WHITE, NULL, false);
+		printSomething("Kfd = ", 120 , 99, text_light_Color, NULL, false);
 	}
 	else
-		printSomething("Kfd = ", 120 , 99, ILI9341_DARKGREY, NULL, false);
+		printSomething("Kfd = ", 120 , 99, text_dark_Color, NULL, false);
 	tft.setCursor(180,99);
 	tft.print(Kfd);
 
