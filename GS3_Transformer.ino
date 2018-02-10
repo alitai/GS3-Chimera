@@ -1,4 +1,4 @@
-#define CURRENT_VERSION "V0.34"
+#define CURRENT_VERSION "V0.33"
 
 /*
 	GS/3 "Chimera"  
@@ -64,6 +64,7 @@
 		Added color variable support
 		Corrected some Acaia Lunar support enable/disable issues
 		Added support for ITEAD and other non Adafruit displays (larger, but the displays aren't of similar quality)
+		Corrected Flush behavior
 		
 */
   
@@ -569,10 +570,14 @@ void loop(void)
 		}
 	}
 
+    // Flush Cycle
+	if (g_newPull && g_flushCycle)
+		flushCycle();
+	
 	//****************************************************************************
 	// Pull an Espresso 
 	//***************************************************************************
-	if (g_newPull)
+	if (g_newPull && !g_flushCycle)
 	{
 		detachInterrupt(digitalPinToInterrupt(GROUP_SOLENOID)); //no triggers until pull ends
 		g_newPull = false; // debounce...

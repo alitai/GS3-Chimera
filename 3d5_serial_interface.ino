@@ -3,7 +3,7 @@
 // These functions receive the buttons pressed on the GS/3 so we can assign different  
 // pull modes to the machine's buttons.
 //
-// This works with the Dosatori 3d5 Deluxe 2ptk Bi-Power board I have running 
+// This works with the Gicar Dosatori 3d5 Deluxe 2ptk Bi-Power board I have running 
 // 1.16 version firmware. It is not guaranteed to work with another card, or one that 
 // uses a different version of firmware.    
 //
@@ -67,9 +67,9 @@ void serialControl()
 			break;
 		case 0x19: // This is the Fn button
 		/*	g_modeSwitchIncomplete = false;
-			g_cleanCycle = false;
-			g_flushCycle = true;*/
-			md.setM1Speed(constrain((int)(cleanPWM * 4.0), pumpMinPWM, pumpMaxPWM)); // Just flush - do not do anyhting else... 
+			g_cleanCycle = false;*/
+			g_flushCycle = true;
+			//md.setM1Speed(constrain((int)(cleanPWM * 4.0), pumpMinPWM, pumpMaxPWM)); // Just flush - do not do anyhting else... 
 			break;
 		default:
 			break;

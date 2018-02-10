@@ -115,3 +115,13 @@ void initFlowLimitBypass()
 #endif
 
 }
+
+void flushCycle()	
+{
+	detachInterrupt(digitalPinToInterrupt(GROUP_SOLENOID));
+	g_newPull = false;
+	while (digitalRead(GROUP_SOLENOID) == LOW)
+		md.setM1Speed(constrain((int)(cleanPWM * 4.0), pumpMinPWM, pumpMaxPWM));
+	md.setM1Speed(0);	 //Shut down pump motor 
+	g_flushCycle = false;
+}

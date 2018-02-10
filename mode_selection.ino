@@ -233,7 +233,14 @@ void gotoSleep()
 		{
 			byte serialCommand = Serial2.read();                  //flush whatever button was pressed...
 			if(serialCommand == 0x15 || serialCommand == 0x19)    //unless it is hot water - which should be dispensed immediately...
+			{
 				Serial2.write(serialCommand);                     // If just water no need to wake up...
+				if (serialCommand == 0x19)
+					{
+						while (digitalRead(GROUP_SOLENOID) == HIGH); //wait for the 3-way
+						flushCycle();
+					}
+			}
 			else
 				break;                                             // Wake up...
 		}
