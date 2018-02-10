@@ -1,4 +1,4 @@
-# GS3-Transformer - The "Chimera"  
+# GS3 "Chimera"  
 	Electronic "Paddle" and profile replay control application for La Marzocco GS/3 AV
 	
 	This software and associated Arduino based hardware converts a GS/3 into a powerful pressure 
