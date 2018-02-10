@@ -119,9 +119,23 @@ void initFlowLimitBypass()
 void flushCycle()	
 {
 	detachInterrupt(digitalPinToInterrupt(GROUP_SOLENOID));
+#ifdef INVERT_FLB_OUTPUT  
+	digitalWrite(FLOW_LIMIT_BYPASS, LOW);
+#else
+	digitalWrite(FLOW_LIMIT_BYPASS, HIGH);
+#endif
+	digitalWrite(GREEN_LED, HIGH); 
+	digitalWrite(RED_LED, LOW);
 	g_newPull = false;
 	while (digitalRead(GROUP_SOLENOID) == LOW)
 		md.setM1Speed(constrain((int)(cleanPWM * 4.0), pumpMinPWM, pumpMaxPWM));
-	md.setM1Speed(0);	 //Shut down pump motor 
+	md.setM1Speed(0);	 //Shut down pump motor
+#ifdef INVERT_FLB_OUTPUT  
+	digitalWrite(FLOW_LIMIT_BYPASS, HIGH);
+#else
+	digitalWrite(FLOW_LIMIT_BYPASS, LOW);
+#endif	
 	g_flushCycle = false;
+	digitalWrite(GREEN_LED, LOW); 
+	digitalWrite(RED_LED, HIGH);
 }
