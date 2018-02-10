@@ -1,4 +1,4 @@
-#define CURRENT_VERSION "V0.33"
+#define CURRENT_VERSION "V0.34"
 
 /*
 	GS/3 "Chimera"  
