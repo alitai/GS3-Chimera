@@ -134,13 +134,37 @@
 #define LOW_CALIBRATION_PRESSURE 30 // x10 in bar - so for 3.0 bar write 30
 #define HIGH_CALIBRATION_PRESSURE 90 // x10 in bar - so for 9.0 bar write 90
 
+//***********************************************************************
+// Touchpad driver
+//***********************************************************************
+#define TFT_TOUCH // A simple XPT2046 library for Arduino https://github.com/Bodmer/TFT_Touch
+//#define TS_STMPE //The Adafruit STMPE610 library 
+
+//***********************************************************************
+// Graphics Drivers
+//***********************************************************************
+//#define ADAFRUIT_ILI9341
+#define MCUFRIEND //MCU Friend allows 16 bit parallel: https://github.com/prenticedavid/MCUFRIEND_kbv
+
+
+/*
 #define LCD_CS 38 // Chip Select goes to Analog 3
 #define LCD_CD 39 // Command/Data goes to Analog 2
 #define LCD_WR 40 // LCD Write goes to Analog 1
 #define LCD_RD 41 // LCD Read goes to Analog 0
 //#define LCD_RESET A4 // Can alternately just connect to Arduino's reset pin
 
-// Color definitions
+*/
+
+#include <Average.h> 
+#include "SPI.h"
+#include "Adafruit_GFX.h"
+#ifdef ADAFRUIT_ILI9341
+#include "Adafruit_ILI9341.h"
+#endif
+#ifdef MCUFRIEND 
+#include <MCUFRIEND_kbv.h>
+// ADAFRUIT Color definitions for MCU_FRIEND
 #define ILI9341_BLACK       0x0000      /*   0,   0,   0 */
 #define ILI9341_NAVY        0x000F      /*   0,   0, 128 */
 #define ILI9341_DARKGREEN   0x03E0      /*   0, 128,   0 */
@@ -161,26 +185,12 @@
 #define ILI9341_GREENYELLOW 0xAFE5      /* 173, 255,  47 */
 #define ILI9341_PINK        0xF81F
 
-//UTFT myGLCD(ILI9341_16,38,39,40,41);
+#endif
 
-
-#include <SPI.h>          // f.k. for Arduino-1.5.2
-
-#include <Average.h> 
-#include "SPI.h"
-#include "Adafruit_GFX.h"
-//#include "PDQ_GFX.h"
-//#include "Adafruit_ILI9341.h"
-//MCU Friend allows 16 bit parallel
-#include <MCUFRIEND_kbv.h>
-//PDQ Fast Serial (doesn't work)
-//#include "PDQ_ILI9341_config.h"
-//#include "PDQ_ILI9341.h"
 
 #include "Fonts/FreeSans9pt7b.h"
 #include "Fonts/FreeSans12pt7b.h"
-//#include "Adafruit_STMPE610.h"
-#include <XPT2046_Touchscreen.h>
+#include "Adafruit_STMPE610.h"
 #include "VNH5019MotorShieldMega.h"
 #include <PID_v1_GS3_EP.h>
 #include <EEPROM.h>
@@ -199,21 +209,34 @@
 #define RED_LED 5 // D5 - LED lights RED during standby
 #define EN1DIAG1 6 // D6 - VNH5019 Motor driver default
 #define GREEN_LED 7 // D7 - LED lights GREEN during a pull
-#define TS_CS 8 //  D8 - TouchScreen CS
-#define TFT_DC 9 // D9 - Adafruit TFT DC
-#define TFT_CS 10 // D10 - Adafruit TFT CS
 //  _PWM1 = 11      // D11 - VNH5019 Motor driver default set in VNH5019MotorShieldMega.h file
 #define INA1 12  // VNH5019 Motor driver - Move INA1 from D2 to D12 to allow pin 2 (INT0) use as an interrupt for the flow meter
 #define FLOW_LIMIT_BYPASS 13 // D13 - Digital output to flow control bypass solenoid (0V - flow limited; 5V - bypass enabled)
 
+#ifdef TS_STMPE
+#define TS_CS 8 //  D8 - TouchScreen CS
+#endif
+#ifdef TFT_TOUCH
+// These are the pins used to interface between the 2046 touch controller and Arduino Mega
+#define DOUT 44 // 3  /* Data out pin (T_DO) of touch screen */
+#define DIN  46 //4  /* Data in pin (T_DIN) of touch screen */
+#define DCS  8  /* Chip select pin (T_CS) of touch screen */
+#define DCLK 48 //6  /* Clock pin (T_CLK) of touch screen */
+#endif
+
+#ifdef ADAFRUIT_ILI9341
+#define TFT_DC 9 // D9 - Adafruit TFT DC
+#define TFT_CS 10 // D10 - Adafruit TFT CS
+#endif
+
 /*
-ITEAD 3.2" MEGA shield
-D2 - T_IRQ 
-D3 - T_DOUT 
-D4 - T_DIN 
-D5 - T_CS 
-D6 - T_CLK 
-D22 DB8 
+If parallel like ITEAD 3.2" MEGA shield pinout using MCUFRIEND is as follows. Remember to configure MCUFRIEND properly using special.h file.
+D2 - T_IRQ   - Disconnected
+D3 - T_DOUT  - Modified to pin 44
+D4 - T_DIN   - Modified to pin 46
+D5 - T_CS    - Modified to pin 8
+D6 - T_CLK   - Modified to pin 48
+D22 DB8      
 D23 DB9 
 D24 DB10 
 D25 DB11 
@@ -239,17 +262,8 @@ D52 SD_SCK
 D53 SD_NSS 
 */
 
-// Touchpad driver
-#define TFT_TOUCH
-//#define TS_XPT2046
-//#define TS_STMPE
 #ifdef TFT_TOUCH
-// These are the pins used to interface between the 2046 touch controller and Arduino Mega
-#define DOUT 44 // 3  /* Data out pin (T_DO) of touch screen */
-#define DIN  46 //4  /* Data in pin (T_DIN) of touch screen */
-#define DCS  8  /* Chip select pin (T_CS) of touch screen */
-#define DCLK 48 //6  /* Clock pin (T_CLK) of touch screen */
-
+#include <TFT_Touch.h>
 // These are the default min and maximum values, set to 0 and 4095 to test the screen
 #define HMIN 0
 #define HMAX 4095
@@ -262,7 +276,7 @@ D53 SD_NSS
 #define HRES 320 /* Default screen resulution for X axis */
 #define VRES 320 /* Default screen resulution for Y axis */
 
-#include <TFT_Touch.h>
+
 
 /* Create an instance of the touch screen library */
 TFT_Touch ts = TFT_Touch(DCS, DCLK, DIN, DOUT);
@@ -272,22 +286,19 @@ TFT_Touch ts = TFT_Touch(DCS, DCLK, DIN, DOUT);
 #ifdef TS_STMPE
 Adafruit_STMPE610 ts = Adafruit_STMPE610(TS_CS);
 #endif
-#ifdef TS_XPT2046
-// MOSI=11, MISO=12, SCK=13
-XPT2046_Touchscreen ts(TS_CS);
-//#define TIRQ_PIN  2
-//XPT2046_Touchscreen ts(CS_PIN);  // Param 2 - NULL - No interrupts
-//XPT2046_Touchscreen ts(CS_PIN, 255);  // Param 2 - 255 - No interrupts
-//XPT2046_Touchscreen ts(CS_PIN, TIRQ_PIN);  // Param 2 - Touch IRQ Pin - interrupt enabled polling
-#endif
+
 TS_Point p;
 
 
 
 // Graphics driver
+#ifdef MCUFRIEND
 MCUFRIEND_kbv tft;
-//Adafruit_ILI9341 tft = Adafruit_ILI9341(TFT_CS, TFT_DC);
-//PDQ_ILI9341 tft; //
+#endif
+#ifdef ADAFRUIT_ILI9341
+Adafruit_ILI9341 tft = Adafruit_ILI9341(TFT_CS, TFT_DC);
+#endif
+
 // Motor PWM controller is an automotive VNH5019 bridge. 20kHz PWM freauency is used as below. Please note the libray was modified to support  
 // a single VNH5019 chip (instead of dusal chips)
 // https://forum.pololu.com/t/modified-vnh5019-shield-library-for-20khz-pwm-with-mega/5178/2
@@ -452,11 +463,15 @@ void setup()
 	// Initialize hardware
 	md.init(); // Initialize VNH5019 motor driver
 	tft.begin(); // Initialize Adafruit ILI9341 based 2.8" display
-//	tft.setRotation(2);
-	//ts.begin(); // Initialize Adafruit STMPE610 based resistive touchscreen
 
+#ifdef TS_STMPE	
+    ts.begin(); // Initialize Adafruit STMPE610 based resistive touchscreen
+#endif
+
+#ifdef TFT_TOUCH
     ts.setCal(HMIN, HMAX, VMIN, VMAX, HRES, VRES, XYSWAP); // Raw xmin, xmax, ymin, ymax, width, height
     ts.setRotation(1);
+#endif
 
 	//Read parameters and saved profiles from EEPROM. Initialize EEPROM if new...
 	if (EEPROM.read(99) == 201 && EEPROM.read(98) == 201 && EEPROM.read(97) == 201) //EEPROM has valid information

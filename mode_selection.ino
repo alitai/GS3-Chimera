@@ -219,8 +219,14 @@ void gotoSleep()
 #ifdef ACAIA_LUNAR_INTEGRATION	
 	disconnectScale();
 #endif
-	//while (!ts.touched()) //wait until ts touched or 3d5 button pressed...
-	while(ts.Pressed())
+
+//#ifdef TS_XPT2046
+#ifdef TS_STMPE
+	while (!ts.touched()) //wait until ts touched or 3d5 button pressed...
+#endif
+#ifdef TFT_TOUCH
+	while(!ts.Pressed())
+#endif
 	{
 #ifdef SERIAL_CONTROL
 		if (Serial2.available()) //wait until 3d5 button pressed...

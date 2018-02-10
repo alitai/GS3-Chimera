@@ -3,16 +3,24 @@ byte touchpadSenseKey()
 	byte softKey = 99;     // 99 is the code for "not touched"
 
 //	TS_Point p;
-//	if (!ts.touched())
+#ifdef TS_STMPE
+	if (!ts.touched())
+		return softKey;
+	while (ts.touched()) 
+		p = ts.getPoint();
+#endif
+#ifdef TFT_TOUCH
 	if (!ts.Pressed())
 		return softKey;       //Touchpad was "not touched"
-//	while (ts.touched()) 
-//		p = ts.getPoint();
+
 	while (ts.Pressed())
 	{
 		p.x = HMAX - ts.RawX();
 		p.y = VMAX - ts.RawY();
 	}
+
+#endif
+
 /*	int delta = 75;
 	if ( p.x != 0 && (p.x - delta) < ts.RawX()  && ts.RawX() < (p.x + delta) )
 	{
