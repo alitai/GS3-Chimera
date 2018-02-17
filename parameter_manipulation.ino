@@ -35,16 +35,16 @@ void menuSetupSystemParameters()
 	{
 		if (potMoved)
 		{
-			FLBThreshold = map(currentPotValue, 0, 1023, 0, 50);
+			FLBThresholdPWM = map(currentPotValue, 0, 1023, 0, 50);
 			graphDrawCurrentProfiles(); // Updates the graph with the new data... 
 			tft.fillRect(120, 0, 120, 10, bg_Color);
 		}
-		printSomething("FLBThreshold = ", 0, 0, text_light_Color, NULL , false);
+		printSomething("FLBThresholdPWM = ", 0, 0, text_light_Color, NULL , false);
 	}
 	else
-		printSomething("FLBThreshold = ", 0, 0, text_dark_Color, NULL , false);
+		printSomething("FLBThresholdPWM = ", 0, 0, text_dark_Color, NULL , false);
 	tft.setCursor(120,0);
-	tft.print(FLBThreshold);
+	tft.print(FLBThresholdPWM);
 	tft.print(" Vm in %");
 
 	if (g_selectedParameter == 2) 
@@ -65,7 +65,7 @@ void menuSetupSystemParameters()
 	{
 		if (potMoved)
 		{
-			pumpMinPWM = map(currentPotValue, 0, 1023, 0, 255);
+			pumpMinPWM = map(currentPotValue, 0, 1023, 0, 400);
 			tft.fillRect(120, 24, 120, 10, bg_Color);
 		}	
 		printSomething("pumpMinPWM = ", 0, 24, text_light_Color, NULL, false);
@@ -80,7 +80,7 @@ void menuSetupSystemParameters()
 	{ 
 		if (potMoved)
 		{
-			pumpMaxPWM = map(currentPotValue, 0, 1023, 0, 255);
+			pumpMaxPWM = map(currentPotValue, 0, 1023, 0, 400);
 			tft.fillRect(120, 36, 120, 10, bg_Color);  
 		}
 		printSomething("pumpMaxPWM = ", 0, 36, text_light_Color, NULL, false);

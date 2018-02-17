@@ -35,7 +35,7 @@ void selectPIDbyMode()
 //*************************************************************************************************
 // Execute a PID calc (if it is time to...) and display PID parameters (Input, Output and Setpoint) 
 //*************************************************************************************************
-byte executePID_P(int profileIndex, byte pumpSpeedByte, float currentPressure, unsigned long pullTimer)
+byte executePID_P(int profileIndex, byte pumpPWMByte, float currentPressure, unsigned long pullTimer)
 {
 	g_PIDInput_P = (double)currentPressure;
 	
@@ -62,11 +62,11 @@ byte executePID_P(int profileIndex, byte pumpSpeedByte, float currentPressure, u
 		else 
 			return (byte)g_PIDOutput_P;
     }
-	return pumpSpeedByte;
+	return pumpPWMByte;
 }
   
 
-byte executePID_F(int profileIndex, byte pumpSpeedByte, int sumFlowProfile, unsigned long pullTimer)
+byte executePID_F(int profileIndex, byte pumpPWMByte, int sumFlowProfile, unsigned long pullTimer)
 {
 	g_PIDSetpoint_F = (double)sumFlowProfile + (double)(g_flowProfile[profileIndex + 1] >> 1 -
 		g_flowProfile[profileIndex] >> 1) * ((double)(pullTimer % 500) /500.0) ;
@@ -90,7 +90,7 @@ byte executePID_F(int profileIndex, byte pumpSpeedByte, int sumFlowProfile, unsi
 			else 
 				return (byte)g_PIDOutput_F;
 		}
-	return pumpSpeedByte;
+	return pumpPWMByte;
 }  
 
 void startFlowPID()
@@ -141,7 +141,7 @@ void startSlayerFlowPID()
 	flowPID.SetOutputLimits(minSetOutputLimit, maxSetOutputLimit);
 }
 
-byte executeSlayerPID_F(int profileIndex, byte pumpSpeedByte, int sumFlowProfile, unsigned long pullTimer)
+byte executeSlayerPID_F(int profileIndex, byte pumpPWMByte, int sumFlowProfile, unsigned long pullTimer)
 {
 	g_PIDSetpoint_F = slayerPIFlowRate ;
 	g_PIDInput_F = (double)mlPerFlowMeterPulse * 60.0 * 1000.0 / (double)g_averageF.mean();
@@ -164,7 +164,7 @@ byte executeSlayerPID_F(int profileIndex, byte pumpSpeedByte, int sumFlowProfile
 			else 
 				return (byte)g_PIDOutput_F;
 		}
-	return pumpSpeedByte;
+	return pumpPWMByte;
 }  
 */
 

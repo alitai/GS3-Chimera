@@ -31,14 +31,14 @@ void dashboardSetup()
   }
 }
 
-void dashboardUpdate(byte pumpSpeedByte, int profileIndex, float averagePressure, long lastFlowPulseCount, boolean preInfusion)
+void dashboardUpdate(unsigned pumpPWM, int profileIndex, float averagePressure, long lastFlowPulseCount, boolean preInfusion)
 {
   if (!g_debugDisplay)
   {
     //PWM setting display
     printSomething(NULL, 42, 13 , PWM_Color, &FreeSans9pt7b , true);
     tft.fillRect(41, 1, 60, 17, bg_Color);
-    tft.print((unsigned)pumpSpeedByte * 100 / 255);
+    tft.print((unsigned)pumpPWM / 4);
     tft.setTextColor(text_dark_Color);  
     tft.print(" %");
     
@@ -237,8 +237,8 @@ void displayBattery()
 {
 	if (scaleConnected)
 	{
-		tft.drawRect(230, 105, 4, 5, ILI9341_DARKGREY); //+210
-		tft.drawRect(213, 103, 18, 9, ILI9341_DARKGREY);
+		tft.drawRect(230, 105, 4, 5, ILI9341_LIGHTGREY); //+210
+		tft.drawRect(213, 103, 18, 9, ILI9341_LIGHTGREY);
 		long h = 16 * scaleBattery / 100;
 		
 		if (scaleBattery > 40)

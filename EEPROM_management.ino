@@ -3,7 +3,7 @@
 //
 // Parameter data structure
 // Address	Data				Length
-//  0		FLBThreshold		byte
+//  0		FLBThresholdPWM		byte
 //	1		debounceCount		byte
 //	2		pumpMinPWM			byte
 //	3		pumpMaxPWM			byte
@@ -75,11 +75,26 @@ void readProfilesfromEEPROM()
 // Retrieve software parameters from EEPROM
 void readSWParametersfromEEPROM()
 {
-  FLBThreshold = EEPROM.read(0);
+  Serial.println("Retrieving EEPROM Paramaters");
+  FLBThresholdPWM = (unsigned) EEPROM.read(0) * 4;
+  Serial.print("FLBThresholdPWM = ");
+  Serial.print(EEPROM.read(0));
+  Serial.print(" ");
+  Serial.println(FLBThresholdPWM); 
   debounceCount = EEPROM.read(1);
-  pumpMinPWM = EEPROM.read(2);
-  pumpMaxPWM = EEPROM.read(3);
+  pumpMinPWM = (unsigned)((long)EEPROM.read(2) * 400 / 255);
+  Serial.print("pumpMinPWM = ");
+  Serial.print(EEPROM.read(2));
+  Serial.print(" ");
+  Serial.println(pumpMinPWM); 
+  pumpMaxPWM = (unsigned)((long)EEPROM.read(3) * 400 / 255);
+  Serial.print("pumpMaxPWM = ");
+  Serial.print(EEPROM.read(3));
+  Serial.print(" ");
+  Serial.println(pumpMaxPWM); 
   EEPROM.get(4, mlPerFlowMeterPulse);
+  Serial.print("mlPerFlowMeterPulse = ");
+  Serial.println(mlPerFlowMeterPulse); 
   EEPROM.get(8, unionThreshold);
   EEPROM.get(12, Kpp);
   EEPROM.get(16, Kpi);
@@ -92,10 +107,22 @@ void readSWParametersfromEEPROM()
 // Update software parameters in EEPROM
 void writeSWParameterstoEEPROM()
 {
-  EEPROM.update(0, FLBThreshold);
+  EEPROM.update(0, (byte)(FLBThresholdPWM / 4));
+  Serial.print("FLBThresholdPWM = ");
+  Serial.print(FLBThresholdPWM); 
+  Serial.print(" Stored as: ");
+  Serial.println(EEPROM.read(0));
   EEPROM.update(1, debounceCount);
-  EEPROM.update(2, pumpMinPWM);
-  EEPROM.update(3, pumpMaxPWM);
+  EEPROM.update(2, (byte)((long)pumpMinPWM * 255 / 400));
+  Serial.print("pumpMinPWM = ");
+  Serial.print(pumpMinPWM); 
+  Serial.print(" Stored as: ");
+  Serial.println(EEPROM.read(2));
+  EEPROM.update(3, (byte)((long)pumpMaxPWM * 255 / 400));
+  Serial.print("pumpMaxPWM = ");
+  Serial.println(pumpMaxPWM); 
+  Serial.print(" Stored as: ");
+  Serial.print(EEPROM.read(3));
   EEPROM.put(4, (float)mlPerFlowMeterPulse);
   EEPROM.put(8, (float)unionThreshold);
   EEPROM.put(12, Kpp);
@@ -111,14 +138,14 @@ void writeSWParameterstoEEPROM()
 void readSlayerParametersfromEEPROM()
 {
   slayerPIFlowRate = EEPROM.read(36);
-  slayerMainPWM = EEPROM.read(37);
+  slayerMainPWM = (unsigned) EEPROM.read(37) * 400 / 255;
   slayerPIPeriod = EEPROM.read(38);
 } 
 
 void writeSlayerParameterstoEEPROM()
 {
   EEPROM.update(36, slayerPIFlowRate);
-  EEPROM.update(37, slayerMainPWM);
+  EEPROM.update(37, (byte) slayerMainPWM * 255 / 400);
   EEPROM.update(38, slayerPIPeriod);
-  EEPROM.update(39, slayerMaxPWM);
+  EEPROM.update(39, (byte)slayerMaxPWM * 255 / 400);
 } 

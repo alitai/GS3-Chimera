@@ -2,10 +2,10 @@
 // Calculate and return pump speed per pull mode
 //***********************************************************************************
 
-byte setPumpSpeedbyMode(int profileIndex, long pullTimer, byte pumpSpeedByte, float currentPressure, boolean preInfusion, int sumFlowProfile, int unionSkew)
+unsigned setpumpPWMbyMode(int profileIndex, long pullTimer, unsigned pumpPWM, float currentPressure, boolean preInfusion, int sumFlowProfile, int unionSkew)
 {
 	if (g_cleanCycle || g_flushCycle)
-		pumpSpeedByte = (float) cleanPWM * 2.55;
+		pumpPWM = cleanPWM;
 	else
 	{
 		switch(g_pullMode)
@@ -16,46 +16,46 @@ byte setPumpSpeedbyMode(int profileIndex, long pullTimer, byte pumpSpeedByte, fl
 #ifdef OTTO_HTWF 
 				// For otto Controls HTWF-1A12A22A Hall Effect 0-5V paddle control
 				if (currentPotValue < 520)
-					pumpSpeedByte = (byte)map(currentPotValue, 100, 520, 0, FLBThreshold * 2.55);
+					pumpPWM = constrain(map(currentPotValue, 100, 520, 0, FLBThresholdPWM), pumpMinPWM, FLBThresholdPWM);
 				else
-					pumpSpeedByte = (byte)map(currentPotValue, 520, 950, FLBThreshold * 2.55, pumpMaxPercent * 2.55 );
+					pumpPWM = constrain(map(currentPotValue, 520, 930, FLBThresholdPWM, pumpMaxPWM), FLBThresholdPWM, pumpMaxPWM);
 #else
-				pumpSpeedByte = (byte)(currentPotValue >> 2); //converts int to byte for standard potentiometer control
+				pumpPWM = (unsigned) currentPotValue * 400 / 1024; //converts int to byte for standard potentiometer control
 #endif
 				break;
 			case AUTO_PWM_PROFILE_PULL:
-				pumpSpeedByte = (byte)(g_PWMProfile[profileIndex]+
-					(int)((double)(g_PWMProfile[profileIndex+1] - 
+				pumpPWM = (unsigned) 400 / 255 * ((g_PWMProfile[profileIndex]+
+					(g_PWMProfile[profileIndex+1] - 
 					g_PWMProfile[profileIndex])*((double)(pullTimer % 500)/500.0)));
 				break;
 			case AUTO_PRESSURE_PROFILE_PULL:
-				pumpSpeedByte = executePID_P(profileIndex, pumpSpeedByte, currentPressure, pullTimer);
+				pumpPWM = executePID_P(profileIndex, pumpPWM, currentPressure, pullTimer);
 				break;
 			case AUTO_FLOW_PROFILE_PULL:
-				pumpSpeedByte = executePID_F(profileIndex, pumpSpeedByte, sumFlowProfile, pullTimer);
+				pumpPWM = executePID_F(profileIndex, pumpPWM, sumFlowProfile, pullTimer);
 				break;
 			case SLAYER_LIKE_PULL:
-				pumpSpeedByte = (float)slayerMainPWM * 255 / 100; // 0-255 range
+				pumpPWM = slayerMainPWM; 
 				break;			
 			case AUTO_UNION_PROFILE_PULL:
 				//Need to define two setpoints and two Inputs
 				if (preInfusion) //if union is in preInfusion mode, it is running Flow Profiling
-					pumpSpeedByte = executePID_F(profileIndex, pumpSpeedByte, sumFlowProfile, pullTimer);
+					pumpPWM = executePID_F(profileIndex, pumpPWM, sumFlowProfile, pullTimer);
 				else
-					pumpSpeedByte = executePID_P(profileIndex - unionSkew, pumpSpeedByte, currentPressure, pullTimer);
+					pumpPWM = executePID_P(profileIndex - unionSkew, pumpPWM, currentPressure, pullTimer);
 				break;
 		}
 	}
 	// Action Time - operate pump & operate FLB solenoid
-	md.setM1Speed(constrain(((int)((float)pumpSpeedByte * 400.0 / 255.0)), pumpMinPWM, pumpMaxPWM));
-	return pumpSpeedByte;
+	md.setM1Speed(constrain(pumpPWM, pumpMinPWM, pumpMaxPWM));
+	return pumpPWM;
 }
 
 //*******************************************************************************
 // Calculate FLB cutoff for each pull mode and activate/deactivate solenoid
 //*******************************************************************************
 
-boolean setFlowLimitBypass(byte pumpSpeedByte, int profileIndex, boolean preInfusion)
+boolean setFlowLimitBypass(unsigned pumpPWM, int profileIndex, boolean preInfusion)
 {
 	if (g_cleanCycle || g_flushCycle)
 		preInfusion = false;
@@ -68,7 +68,7 @@ boolean setFlowLimitBypass(byte pumpSpeedByte, int profileIndex, boolean preInfu
 			case AUTO_PWM_PROFILE_PULL:
 			case AUTO_PRESSURE_PROFILE_PULL:
 			case AUTO_FLOW_PROFILE_PULL:
-				if ((unsigned)pumpSpeedByte * 100 / 255 > FLBThreshold)
+				if (pumpPWM > FLBThresholdPWM + 1)
 					preInfusion = false;
 				break;
 			case SLAYER_LIKE_PULL:
@@ -128,7 +128,7 @@ void flushCycle()
 	digitalWrite(RED_LED, LOW);
 	g_newPull = false;
 	while (digitalRead(GROUP_SOLENOID) == LOW)
-		md.setM1Speed(constrain((int)(cleanPWM * 4.0), pumpMinPWM, pumpMaxPWM));
+		md.setM1Speed(constrain(cleanPWM, pumpMinPWM, pumpMaxPWM));
 	md.setM1Speed(0);	 //Shut down pump motor
 #ifdef INVERT_FLB_OUTPUT  
 	digitalWrite(FLOW_LIMIT_BYPASS, HIGH);

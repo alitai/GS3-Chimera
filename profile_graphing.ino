@@ -50,17 +50,17 @@ void graphDrawSlayerProfile()
 	tft.drawFastHLine(34, 260 - (slayerPIFlowRate * perPixel), slayerPIPeriod << 1 , axis_minor_Color);	
 
 	// Draw the Slayer Main PWM speed (the pressure decay is physical)
-	printSomething(NULL, 100 + slayerPIPeriod , 250 - (slayerMainPWM * perPixel) , PWM_BGColor, NULL , false);
+	printSomething(NULL, 100 + slayerPIPeriod , 250 - (slayerMainPWM / 4 * perPixel) , PWM_BGColor, NULL , false);
 	tft.print(slayerMainPWM);
 	tft.print("%");
 	printSomething("PWM", 10, 256 - (slayerMainPWM * perPixel), text_dark_Color, NULL , false);
-	tft.drawFastHLine(34 + (slayerPIPeriod << 1), 260 - (slayerMainPWM * perPixel) , 200 - (slayerPIPeriod << 1) , axis_minor_Color);
+	tft.drawFastHLine(34 + (slayerPIPeriod << 1), 260 - (slayerMainPWM / 4 * perPixel) , 200 - (slayerPIPeriod << 1) , axis_minor_Color);
 	
 	// Draw the Slayer PI Period vertical line
-	printSomething(NULL, 41 + (slayerPIPeriod << 1), (257 - (slayerPIFlowRate + (((slayerMainPWM - slayerPIFlowRate) >> 1) * perPixel))) , timer_Color , NULL , false);
+	printSomething(NULL, 41 + (slayerPIPeriod << 1), (257 - (slayerPIFlowRate + (((slayerMainPWM / 4 - slayerPIFlowRate) >> 1) * perPixel))) , timer_Color , NULL , false);
 	tft.print(slayerPIPeriod);
 	tft.print("s");
-	tft.drawLine(34 + (slayerPIPeriod << 1), 260 - (slayerMainPWM * perPixel) , 34 + (slayerPIPeriod << 1) ,260 - (slayerPIFlowRate * perPixel)  , ILI9341_DARKGREY);
+	tft.drawLine(34 + (slayerPIPeriod << 1), 260 - (slayerMainPWM / 4 * perPixel) , 34 + (slayerPIPeriod << 1) ,260 - (slayerPIFlowRate * perPixel)  , ILI9341_DARKGREY);
 	
 	
 }
@@ -91,7 +91,7 @@ void graphDrawCurrentProfiles()
 	}
 }
 
-void graphUpdate(byte pumpSpeedByte, int profileIndex, int averagePressure, unsigned long flowPulseCount, boolean isBackground, boolean preInfusion)
+void graphUpdate(unsigned pumpPWM, int profileIndex, int averagePressure, unsigned long flowPulseCount, boolean isBackground, boolean preInfusion)
 {
 	float perPixel = 1.35; //135 pixels represent 100% signal (or 1.35 pixels / 1 percent) 
 	
@@ -107,14 +107,14 @@ void graphUpdate(byte pumpSpeedByte, int profileIndex, int averagePressure, unsi
 	}
 
     // Draw 3 current graph pixels
-	int graph_x = 34+profileIndex;
-    tft.drawPixel(graph_x,graph_y ((float)pumpSpeedByte * perPixel * 100 / 255) , colorPWM);
+	int graph_x = 34 + profileIndex;
+    tft.drawPixel(graph_x,graph_y ((float)pumpPWM * perPixel / 4) , colorPWM);
 	tft.drawPixel(graph_x,graph_y(averagePressure * 1.2 * perPixel),colorPressure);
 	if (preInfusion)
 		tft.drawPixel(graph_x,graph_y((float)flowPulseCount * mlPerFlowMeterPulsePreInfusion * perPixel),colorFlow); 
 	else
 		tft.drawPixel(graph_x,graph_y((float)flowPulseCount * mlPerFlowMeterPulse * perPixel),colorFlow); 
-  // Assaf - added to draw flow rate
+  // Draw flow rate
 	if (!isBackground && preInfusion)
 			tft.drawPixel(graph_x, graph_y((float)mlPerFlowMeterPulsePreInfusion * 60.0 * 1000.0 * 0.66666 / (float)g_averageF.mean()), flowRate_Color);  //150ml/min FR...
 	if (!isBackground && !preInfusion)
@@ -133,9 +133,9 @@ void graphDrawFLB()
 	float perPixel = 1.35; //135 pixels represent 100% signal (or 1.35 pixels / 1 percent) 
 	// draw Flow Limiter Bypass threshold dashed line
 	tft.fillRect(0, 177, 33, 80, bg_Color);
-	printSomething("FLB", 10, 256-(FLBThreshold * perPixel), text_dark_Color, NULL , false);
+	printSomething("FLB", 10, 256-(FLBThresholdPWM / 4 * perPixel), text_dark_Color, NULL , false);
 	for (int i = 0; i < 70; i++)
-		tft.drawFastHLine(31 + i * 3, 260 - (FLBThreshold * perPixel) , 2 , axis_minor_Color);
+		tft.drawFastHLine(31 + i * 3, 260 - (FLBThresholdPWM / 4 * perPixel) , 2 , axis_minor_Color);
 }  
 
 void graphDrawEmptyGraph()

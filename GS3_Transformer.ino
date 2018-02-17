@@ -1,4 +1,4 @@
-#define CURRENT_VERSION "V0.33"
+#define CURRENT_VERSION "V0.35"
 
 /*
 	GS/3 "Chimera"  
@@ -66,6 +66,9 @@
 		Added support for ITEAD and other non Adafruit displays (larger, but the displays aren't of similar quality)
 		Corrected Flush behavior
 		
+	v0.35
+		Corrected some bad pumpPWM casting
+		
 */
   
 // For debugging, this sends the entire EEPROM content to the serial monitor
@@ -98,9 +101,9 @@
 //*******************************************************************************
 // Calibrate boiler pressure readings 
 //********************************************************************************
-// The CALIBRATE_PRESSURE directive displays the 10-bit reading on the analog pressure input pin. 
-// Assuming the pressure sensor is sufficiently linear, we will need two points to calibrate the 
-// readings (to pressure in bars): 
+// The CALIBRATE_PRESSURE directive displays the 10-bit reading on the analog pressure input pin 
+// (instead of the 12 bar scale). Assuming the pressure sensor is sufficiently linear, we will need 
+// two points to calibrate the readings (to pressure in bars): 
 // A low range pressure input and its associated reading, and a high pressure source and its 
 // associated reading.
 // So for calibration of the pressure measurement loop enable the line below. 
@@ -121,12 +124,12 @@
 //#define CALIBRATE_PRESSURE
 
 // Write the low end calibration figure below
-//#define LOW_CALIBRATION_PRESSURE_READING 287 // 10-bit AD reading when low (3.0 bar) pressure is applied (between 0-1023)
-#define LOW_CALIBRATION_PRESSURE_READING 320 // 10-bit AD reading when low (3.0 bar) pressure is applied (between 0-1023)
+#define LOW_CALIBRATION_PRESSURE_READING 290 // 10-bit AD reading when low (3.0 bar) pressure is applied (between 0-1023)
+//#define LOW_CALIBRATION_PRESSURE_READING 320 // (blown Mega) 10-bit AD reading when low (3.0 bar) pressure is applied (between 0-1023)
 
 // Write the high end Calibration figure below
-//#define HIGH_CALIBRATION_PRESSURE_READING 791 // 10-bit AD reading when high (9.0 bar) pressure is applied (between 0-1023)
-#define HIGH_CALIBRATION_PRESSURE_READING 891 // 10-bit AD reading when high (9.0 bar) pressure is applied (between 0-1023)
+#define HIGH_CALIBRATION_PRESSURE_READING 788 // 10-bit AD reading when high (9.0 bar) pressure is applied (between 0-1023)
+//#define HIGH_CALIBRATION_PRESSURE_READING 891 // (blown MEGA) 10-bit AD reading when high (9.0 bar) pressure is applied (between 0-1023)
 
 // If your calibration point are different than 3.0 and 9.0 bar - set the relevant pressures below
 // Note: This setting is provided for sensors that are linear within a narrower pressure range - so calibration
@@ -147,14 +150,12 @@
 //#define ADAFRUIT_ILI9341
 #define MCUFRIEND //MCU Friend allows 16 bit parallel: https://github.com/prenticedavid/MCUFRIEND_kbv
 
-
 /*
 #define LCD_CS 38 // Chip Select goes to Analog 3
 #define LCD_CD 39 // Command/Data goes to Analog 2
 #define LCD_WR 40 // LCD Write goes to Analog 1
 #define LCD_RD 41 // LCD Read goes to Analog 0
-//#define LCD_RESET A4 // Can alternately just connect to Arduino's reset pin
-
+#define LCD_RESET A4 // Can alternately just connect to Arduino's reset pin
 */
 
 #include <Average.h> 
@@ -187,7 +188,6 @@
 #define ILI9341_PINK        0xF81F
 
 #endif
-
 
 #include "Fonts/FreeSans9pt7b.h"
 #include "Fonts/FreeSans12pt7b.h"
@@ -277,8 +277,6 @@ D53 SD_NSS
 #define HRES 320 /* Default screen resulution for X axis */
 #define VRES 320 /* Default screen resulution for Y axis */
 
-
-
 /* Create an instance of the touch screen library */
 TFT_Touch ts = TFT_Touch(DCS, DCLK, DIN, DOUT);
 
@@ -289,8 +287,6 @@ Adafruit_STMPE610 ts = Adafruit_STMPE610(TS_CS);
 #endif
 
 TS_Point p;
-
-
 
 // Graphics driver
 #ifdef MCUFRIEND
@@ -313,7 +309,11 @@ VNH5019MotorShieldMega md = VNH5019MotorShieldMega(INA1, INB1, EN1DIAG1, CS1);
 // Slayer PI Flow rate ml/minute (for display only!)
 // Slayer PI Period in seconds
 
-byte FLBThreshold = 15, pumpMaxPWM = 210, pumpMinPWM = 0, pumpMaxPercent = 45, debounceCount = 3, slayerPIFlowRate = 5, slayerMainPWM = 28, slayerPIPeriod = 15, slayerMaxPWM = 45; 
+// Quote the following line to force parameter rewrite
+#define READ_EEPROM_PARAMETERS
+
+byte debounceCount = 3, slayerPIFlowRate = 5, slayerPIPeriod = 15; 
+
 float mlPerFlowMeterPulse = 0.48f; // 0.42f;// ml/pulse
 float mlPerFlowMeterPulsePreInfusion = 0.34f; // 0.42f;// ml/pulse
 double unionThreshold = 3.0d; // in bar - at this point the system will switch from FP to PP
@@ -326,7 +326,13 @@ PID flowPID(&g_PIDInput_F, &g_PIDOutput_F, &g_PIDSetpoint_F,Kfp,Kfi,Kfd, DIRECT)
 
 // The following system parameters are constant and will not change
 const unsigned PIDSampleTime = 100; // in mSec
-const byte cleanPWM = 42; // %PWM for cleaning cycle
+
+
+// PWM speed is from -400 to 400. Pumps cannot be driven in reverse, so from 0-400. 
+//const byte cleanPWM = 42; // %PWM for cleaning cycle
+//byte FLBThresholdPWM = 15, pumpMaxPWM = 210, pumpMinPWM = 0, pumpMaxPercent = 50
+unsigned FLBThresholdPWM = 60,  pumpMaxPWM = 220, pumpMinPWM = 0, pumpMaxPercent = pumpMaxPWM / 4, slayerMainPWM = 112, slayerMaxPWM = 190;
+const unsigned cleanPWM = 168; // 42%PWM for cleaning cycle
 // Removed FP and PP can correct up to y percent lower than profile PWM (double)
 //#define PWM_TRACK_UPPER_BOUND 15.0 // FP and PP can correct up to x percent higher than profile PWM (double)
 //#define PWM_TRACK_LOWER_BOUND 90.0 // FP and PP can correct up to y percent lower than profile PWM (double)
@@ -474,6 +480,7 @@ void setup()
     ts.setRotation(1);
 #endif
 
+#ifdef READ_EEPROM_PARAMETERS
 	//Read parameters and saved profiles from EEPROM. Initialize EEPROM if new...
 	if (EEPROM.read(99) == 201 && EEPROM.read(98) == 201 && EEPROM.read(97) == 201) //EEPROM has valid information
 	{
@@ -481,7 +488,8 @@ void setup()
 		readProfilesfromEEPROM();
 		readSlayerParametersfromEEPROM();
 	}
-	else // initialize EEPROM (if Arduino is new)
+	else // initialize EEPROM (if Arduino is new) 
+#endif
 	{
 		writeSWParameterstoEEPROM();
 		writeSlayerParameterstoEEPROM();
@@ -512,7 +520,7 @@ void loop(void)
 	byte countOffCycles;
 	long lastFlowPulseCount;
 	unsigned long pullStartTime, pullTimer, lastFlowPulseMillis;
-	byte pumpSpeedByte;
+	unsigned pumpPWM;
 	int sumFlowProfile;
 	int unionSkew; // alignment delta between pressure profile and union threshold point
 	boolean preInfusion = false;
@@ -599,7 +607,7 @@ void loop(void)
 		countOffCycles = debounceCount;
 		profileIndex = 0;
 		lastProfileIndex = 1; // force a first screen update
-		pumpSpeedByte = 0;
+		pumpPWM = 0;
 		sumFlowProfile = 0;
 
 		// if system did not finish prepping a serial pull - do it now!
@@ -668,22 +676,22 @@ void loop(void)
 		}	
 			
 		// calculate pump speed & preinfusion for all pull modes...
-		pumpSpeedByte = setPumpSpeedbyMode(profileIndex, pullTimer, pumpSpeedByte, currentPressure, preInfusion, sumFlowProfile, unionSkew);
-		preInfusion = setFlowLimitBypass(pumpSpeedByte, profileIndex, preInfusion); // check preinfusion status & set flow limit bypass solenoid and Slayer style preInfusion
+		pumpPWM = setpumpPWMbyMode(profileIndex, pullTimer, pumpPWM, currentPressure, preInfusion, sumFlowProfile, unionSkew);
+		preInfusion = setFlowLimitBypass(pumpPWM, profileIndex, preInfusion); // check preinfusion status & set flow limit bypass solenoid and Slayer style preInfusion
 		//stopIfFault(); // What to do with this??? Make an error display???
 		
 		// Update graphs, dashboards and profiles
 		if (profileIndex != lastProfileIndex) // display update & document profile every 500mSec
 		{
 			if (g_pullMode == MANUAL_PULL && !g_cleanCycle && !g_flushCycle) //update profile array if manual && not cleaning...
-				updateProfiles(profileIndex, pumpSpeedByte, lastFlowPulseCount);
+				updateProfiles(profileIndex, pumpPWM, lastFlowPulseCount);
 			
 			if (g_debugDisplay && profileIndex < 4)   // For debug display
-				updateDebugFirstFour(profileIndex, pumpSpeedByte, lastFlowPulseCount);
+				updateDebugFirstFour(profileIndex, pumpPWM, lastFlowPulseCount);
 	
 			// Update dashboard and graph
-			dashboardUpdate(pumpSpeedByte, profileIndex, g_averageP.mean(), lastFlowPulseCount, preInfusion);
-			graphUpdate(pumpSpeedByte, profileIndex, g_averageP.mean() * 100 / 12.0, g_flowPulseCount, false, preInfusion);
+			dashboardUpdate(pumpPWM, profileIndex, g_averageP.mean(), lastFlowPulseCount, preInfusion);
+			graphUpdate(pumpPWM, profileIndex, g_averageP.mean() * 100 / 12.0, g_flowPulseCount, false, preInfusion);
 			
 			//reset variables for next 500mSec period... 
 			lastFlowPulseCount = g_flowPulseCount; 
