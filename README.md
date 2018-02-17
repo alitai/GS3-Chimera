@@ -55,21 +55,14 @@
 		Enlarged graph view
 		
 	v0.33
-		Added support for Otto Controls HTWF Hall Effect control paddle with center indent aligned to FLB threshold (PI until center indent, main pull beyond it)
-	
+		Added support for Otto Controls HTWF Hall Effect control paddle with center indent aligned to FLB threshold 
+		(PI until center indent, main pull beyond it)
 	
 	v0.34
-
 		Added color variable support
-
 		Corrected some Acaia Lunar support enable/disable issues
-
 		Added support for ITEAD and other non Adafruit displays (larger, but the displays aren't of similar quality)
-
 		Corrected Flush behavior
 
-		
-
 	v0.35
-
 		Corrected some bad pumpPWM casting
