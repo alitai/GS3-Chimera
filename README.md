@@ -1,4 +1,6 @@
-# GS3 "Chimera"  
+
+	v0.36
+		Added Combo mode 7: Slayer like PI and subsequent Pressure Profile... SLAYER_LIKE_PI_PRESSURE_PROFILE# GS3 "Chimera"  
 	Electronic "Paddle" and profile replay control application for La Marzocco GS/3 AV
 	
 	This software and associated Arduino based hardware converts a GS/3 into a powerful pressure 
@@ -66,3 +68,6 @@
 
 	v0.35
 		Corrected some bad pumpPWM casting
+
+	v0.36
+		Added Combo mode 7: Slayer like PI and subsequent Pressure Profile... SLAYER_LIKE_PI_PRESSURE_PROFILE
