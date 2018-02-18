@@ -8,11 +8,10 @@ unsigned setpumpPWMbyMode(int profileIndex, long pullTimer, unsigned pumpPWM, fl
 		pumpPWM = cleanPWM;
 	else
 	{
+		int currentPotValue = analogRead(CONTROL_POT);
 		switch(g_pullMode)
 		{
-			case MANUAL_PULL:
-				int currentPotValue;
-				currentPotValue = analogRead(CONTROL_POT);
+			case MANUAL_PULL:	
 #ifdef OTTO_HTWF 
 				// For otto Controls HTWF-1A12A22A Hall Effect 0-5V paddle control
 				if (currentPotValue < 520)
@@ -29,20 +28,25 @@ unsigned setpumpPWMbyMode(int profileIndex, long pullTimer, unsigned pumpPWM, fl
 					g_PWMProfile[profileIndex])*((double)(pullTimer % 500)/500.0)));
 				break;
 			case AUTO_PRESSURE_PROFILE_PULL:
-				pumpPWM = executePID_P(profileIndex, pumpPWM, currentPressure, pullTimer);
+				pumpPWM = executePID_P(true, 0, profileIndex, pumpPWM, currentPressure, pullTimer);
 				break;
 			case AUTO_FLOW_PROFILE_PULL:
 				pumpPWM = executePID_F(profileIndex, pumpPWM, sumFlowProfile, pullTimer);
 				break;
 			case SLAYER_LIKE_PULL:
 				pumpPWM = slayerMainPWM; 
-				break;			
+				break;	
+			case SLAYER_LIKE_PI_PRESSURE_PROFILE:	
+				pumpPWM = executePID_P(false, currentPotValue, profileIndex, pumpPWM, currentPressure, pullTimer); // calculate always but
+				if (pullTimer < 1000 || currentPressure < 3.0)                                                                         // override during PI
+					pumpPWM = slayerMainPWM;
+				break;
 			case AUTO_UNION_PROFILE_PULL:
 				//Need to define two setpoints and two Inputs
 				if (preInfusion) //if union is in preInfusion mode, it is running Flow Profiling
 					pumpPWM = executePID_F(profileIndex, pumpPWM, sumFlowProfile, pullTimer);
 				else
-					pumpPWM = executePID_P(profileIndex - unionSkew, pumpPWM, currentPressure, pullTimer);
+					pumpPWM = executePID_P(true, 0, profileIndex - unionSkew, pumpPWM, currentPressure, pullTimer);
 				break;
 		}
 	}
@@ -55,7 +59,7 @@ unsigned setpumpPWMbyMode(int profileIndex, long pullTimer, unsigned pumpPWM, fl
 // Calculate FLB cutoff for each pull mode and activate/deactivate solenoid
 //*******************************************************************************
 
-boolean setFlowLimitBypass(unsigned pumpPWM, int profileIndex, boolean preInfusion)
+boolean setFlowLimitBypass(unsigned pumpPWM, int profileIndex, boolean preInfusion, float currentPressure)
 {
 	if (g_cleanCycle || g_flushCycle)
 		preInfusion = false;
@@ -74,7 +78,10 @@ boolean setFlowLimitBypass(unsigned pumpPWM, int profileIndex, boolean preInfusi
 			case SLAYER_LIKE_PULL:
 				if (profileIndex > slayerPIPeriod << 1)
 					preInfusion = false;
-				break;			
+				break;	
+			case SLAYER_LIKE_PI_PRESSURE_PROFILE:
+				if(profileIndex > 2 && currentPressure > 3.0)
+					preInfusion = false;
 		}
 	}
 

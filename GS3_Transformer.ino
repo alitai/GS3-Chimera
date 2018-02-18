@@ -69,10 +69,26 @@
 	v0.35
 		Corrected some bad pumpPWM casting
 		
+	v0.36
+		Added Combo mode 7: Slayer like PI and subsequent Pressure Profile... SLAYER_LIKE_PI_PRESSURE_PROFILE
+		
 */
-  
+// Menu system, mode selection and state machine variables  
+// Available Pull Modes:
+#define MANUAL_PULL 0
+#define AUTO_PWM_PROFILE_PULL 1
+#define AUTO_PRESSURE_PROFILE_PULL 2
+#define AUTO_FLOW_PROFILE_PULL 3
+#define AUTO_UNION_PROFILE_PULL 4            // Union Profile does FP and switches to PP
+#define SLAYER_LIKE_PULL 5
+#define LEVER_LIKE_PULL 6
+#define SLAYER_LIKE_PI_PRESSURE_PROFILE 7   // Low flow PI & pressure profiling
+
 // For debugging, this sends the entire EEPROM content to the serial monitor
 //#define EEPROM_SERIAL_DOWNLOAD
+
+// Quote the following line to force parameter rewrite from code defaults below into EEPROM
+//#define READ_EEPROM_PARAMETERS
 
 // If the output relay inverts (like some modules do) uncomment the next line
 #define INVERT_FLB_OUTPUT
@@ -309,15 +325,13 @@ VNH5019MotorShieldMega md = VNH5019MotorShieldMega(INA1, INB1, EN1DIAG1, CS1);
 // Slayer PI Flow rate ml/minute (for display only!)
 // Slayer PI Period in seconds
 
-// Quote the following line to force parameter rewrite
-#define READ_EEPROM_PARAMETERS
-
 byte debounceCount = 3, slayerPIFlowRate = 5, slayerPIPeriod = 15; 
 
 float mlPerFlowMeterPulse = 0.48f; // 0.42f;// ml/pulse
 float mlPerFlowMeterPulsePreInfusion = 0.34f; // 0.42f;// ml/pulse
 double unionThreshold = 3.0d; // in bar - at this point the system will switch from FP to PP
-double Kpp = 5, Kpi = 5, Kpd = 1, Kfp = 5, Kfi = 5, Kfd = 1; 
+//double Kpp = 5, Kpi = 5, Kpd = 1, Kfp = 5, Kfi = 5, Kfd = 1; 
+double Kpp = 100, Kpi = 10, Kpd = 0, Kfp = 5, Kfi = 5, Kfd = 1; 
 
 // Define 2 PID loops
 double g_PIDSetpoint_F, g_PIDInput_F, g_PIDOutput_F, g_PIDInput_P, g_PIDOutput_P, g_PIDSetpoint_P;
@@ -339,7 +353,7 @@ const unsigned cleanPWM = 168; // 42%PWM for cleaning cycle
 
 // Initialize FIFO averages for Pressure and Flow Rate 
 Average<float> g_averageP(6);
-Average<unsigned long> g_averageF(4); // Pulse rate can be as low as 4-5 per scond. So we select 4 to ensure that the update rates are reasonable.
+Average<unsigned long> g_averageF(4); // Pulse rate can be as low as 4-5 per second. So we select 4 to ensure that the update rates are reasonable.
 
 // Current pull profiles - 200 byte arrays of measurements - each bin is 500mSec
 // PWM Voltage Profile (as sent to the VNH5019 is kept in a 200 byte array)
@@ -352,15 +366,6 @@ unsigned long g_lastMillis = 0;
 					   
 #define PRINT_SPACE tft.print(" ") // for convenience
 
-// Menu system, mode selection and state machine variables  
-// Available Pull Modes:
-#define MANUAL_PULL 0
-#define AUTO_PWM_PROFILE_PULL 1
-#define AUTO_PRESSURE_PROFILE_PULL 2
-#define AUTO_FLOW_PROFILE_PULL 3
-#define AUTO_UNION_PROFILE_PULL 4            // Union Profile does FP and switches to PP
-#define SLAYER_LIKE_PULL 5
-#define LEVER_LIKE_PULL 6
 unsigned char g_pullMode; 
 int g_currentMenu, g_selectedParameter = 0, g_lastParameterPotValue;
 boolean g_debugDisplay, g_modeSwitchIncomplete = false; 
@@ -677,7 +682,7 @@ void loop(void)
 			
 		// calculate pump speed & preinfusion for all pull modes...
 		pumpPWM = setpumpPWMbyMode(profileIndex, pullTimer, pumpPWM, currentPressure, preInfusion, sumFlowProfile, unionSkew);
-		preInfusion = setFlowLimitBypass(pumpPWM, profileIndex, preInfusion); // check preinfusion status & set flow limit bypass solenoid and Slayer style preInfusion
+		preInfusion = setFlowLimitBypass(pumpPWM, profileIndex, preInfusion, currentPressure); // check preinfusion status & set flow limit bypass solenoid and Slayer style preInfusion
 		//stopIfFault(); // What to do with this??? Make an error display???
 		
 		// Update graphs, dashboards and profiles

@@ -24,6 +24,9 @@ void selectPIDbyMode()
 		case SLAYER_LIKE_PULL:
 			stopPID(); // PID is not needed for Slayer replay
 			break;
+		case SLAYER_LIKE_PI_PRESSURE_PROFILE:
+			startPressurePID();
+			break;		
 		case AUTO_UNION_PROFILE_PULL:
 			//Need to define two PID loops
 			startPressurePID();
@@ -35,24 +38,26 @@ void selectPIDbyMode()
 //*************************************************************************************************
 // Execute a PID calc (if it is time to...) and display PID parameters (Input, Output and Setpoint) 
 //*************************************************************************************************
-byte executePID_P(int profileIndex, byte pumpPWMByte, float currentPressure, unsigned long pullTimer)
+byte executePID_P(boolean followProfile, int currentPotValue, int profileIndex, int pumpPWM, float currentPressure, unsigned long pullTimer)
 {
 	g_PIDInput_P = (double)currentPressure;
 	
 	// Note: in the profile we store averagePressure as displayed (i.e. multiplied by 100 / 12) so we have to correct the Setpoint by multiplying with reciprocal (12 / 100)
-	g_PIDSetpoint_P = (double)g_pressureProfile[profileIndex] * 12.0 / 100.0 + (double)(g_pressureProfile[profileIndex + 1] -
-		g_pressureProfile[profileIndex]) * 12.0 / 100.0 * ((double)(pullTimer % 500) /500.0) ; 
-        
-	if (pressurePID.Compute())
+	if (followProfile)
+		g_PIDSetpoint_P = (double)g_pressureProfile[profileIndex] * 12.0 / 100.0 + (double)(g_pressureProfile[profileIndex + 1] -
+			g_pressureProfile[profileIndex]) * 12.0 / 100.0 * ((double)(pullTimer % 500) /500.0) ; 
+    else
+		g_PIDSetpoint_P = (double)currentPotValue / 90.0; //(double)map(currentPotValue, 0, 1023, 3, 10);
+		if (pressurePID.Compute())
     {
 		printSomething("Pressure", 190,188, ILI9341_CYAN, NULL, true);
 		tft.fillRect(216, 200, 28, 36, bg_Color);
 		printSomething("SP=", 190, 200 , ILI9341_CYAN, NULL , false); 
 		tft.setCursor(216,200);
-		tft.print((int)g_PIDSetpoint_P);
+		tft.print(g_PIDSetpoint_P, 1);
 		printSomething("In=", 190, 212 , ILI9341_CYAN, NULL , false); 
 		tft.setCursor(216,212);
-		tft.print((int)g_PIDInput_P); 
+		tft.print(g_PIDInput_P, 1); 
 		printSomething("Op=", 190, 224 , ILI9341_CYAN, NULL , false); 
 		tft.setCursor(216,224);
 		tft.print((int)g_PIDOutput_P);  
@@ -60,13 +65,13 @@ byte executePID_P(int profileIndex, byte pumpPWMByte, float currentPressure, uns
 		if (g_PIDOutput_P < 0)
 			return 0;
 		else 
-			return (byte)g_PIDOutput_P;
+			return (int)g_PIDOutput_P;
     }
-	return pumpPWMByte;
+	return pumpPWM;
 }
   
 
-byte executePID_F(int profileIndex, byte pumpPWMByte, int sumFlowProfile, unsigned long pullTimer)
+byte executePID_F(int profileIndex, int pumpPWM, int sumFlowProfile, unsigned long pullTimer)
 {
 	g_PIDSetpoint_F = (double)sumFlowProfile + (double)(g_flowProfile[profileIndex + 1] >> 1 -
 		g_flowProfile[profileIndex] >> 1) * ((double)(pullTimer % 500) /500.0) ;
@@ -88,9 +93,9 @@ byte executePID_F(int profileIndex, byte pumpPWMByte, int sumFlowProfile, unsign
 			if (g_PIDOutput_F < 0)
 				return 0;
 			else 
-				return (byte)g_PIDOutput_F;
+				return (int)g_PIDOutput_F;
 		}
-	return pumpPWMByte;
+	return pumpPWM;
 }  
 
 void startFlowPID()
