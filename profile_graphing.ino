@@ -12,9 +12,10 @@
 //*********************************************************************
 void selectandDrawProfilebyMode()
 {
-	if (g_cleanCycle || g_flushCycle)
+	if (g_flushCycle)
 	{	
-		graphDrawEmptyGraph(); // For cleaning cycle - Clear existing graph and draw an empty one
+		// graphDrawEmptyGraph(); // For cleaning cycle leave previous graph - Clear existing graph and draw an empty one
+		graphDrawCurrentProfiles(); //???
 		return;
 	}
 	switch (g_pullMode)
@@ -23,13 +24,15 @@ void selectandDrawProfilebyMode()
 		case AUTO_FLOW_PROFILE_PULL:	
 		case AUTO_PWM_PROFILE_PULL:
 		case AUTO_UNION_PROFILE_PULL:
+		case SLAYER_LIKE_PI_PRESSURE_PROFILE:	
 			graphDrawCurrentProfiles();
 			break;
 			
 		case MANUAL_PULL:
 			graphDrawEmptyGraph(); // Clear existing graph and draw an empty one
 			graphDrawFLB(); //Draw line where FLB activates
-			clearProfiles();
+		//	clearProfiles();
+		graphDrawCurrentProfiles(); //test
 			break;
 			
 		case SLAYER_LIKE_PULL:

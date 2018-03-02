@@ -2,53 +2,48 @@
 // Calculate and return pump speed per pull mode
 //***********************************************************************************
 
-unsigned setpumpPWMbyMode(int profileIndex, long pullTimer, unsigned pumpPWM, float currentPressure, boolean preInfusion, int sumFlowProfile, int unionSkew)
+unsigned setPumpPWMbyMode(int profileIndex, long pullTimer, unsigned pumpPWM, float currentPressure, boolean preInfusion, int sumFlowProfile, int unionSkew)
 {
-	if (g_cleanCycle || g_flushCycle)
-		pumpPWM = cleanPWM;
-	else
+	int currentPotValue = analogRead(CONTROL_POT);
+	switch(g_pullMode)
 	{
-		int currentPotValue = analogRead(CONTROL_POT);
-		switch(g_pullMode)
-		{
-			case MANUAL_PULL:	
+		case MANUAL_PULL:	
 #ifdef OTTO_HTWF 
-				// For otto Controls HTWF-1A12A22A Hall Effect 0-5V paddle control
-				if (currentPotValue < 520)
-					pumpPWM = constrain(map(currentPotValue, 100, 520, 0, FLBThresholdPWM), pumpMinPWM, FLBThresholdPWM);
-				else
-					pumpPWM = constrain(map(currentPotValue, 520, 930, FLBThresholdPWM, pumpMaxPWM), FLBThresholdPWM, pumpMaxPWM);
+			// For otto Controls HTWF-1A12A22A Hall Effect 0-5V paddle control
+			if (currentPotValue < 520)
+				pumpPWM = constrain(map(currentPotValue, 100, 520, 0, FLBThresholdPWM), pumpMinPWM, FLBThresholdPWM);
+			else
+				pumpPWM = constrain(map(currentPotValue, 520, 930, FLBThresholdPWM, pumpMaxPWM), FLBThresholdPWM, pumpMaxPWM);
 #else
-				pumpPWM = (unsigned) currentPotValue * 400 / 1024; //converts int to byte for standard potentiometer control
+			pumpPWM = (unsigned) currentPotValue * 400 / 1024; //converts int to byte for standard potentiometer control
 #endif
-				break;
-			case AUTO_PWM_PROFILE_PULL:
-				pumpPWM = (unsigned) 400 / 255 * ((g_PWMProfile[profileIndex]+
-					(g_PWMProfile[profileIndex+1] - 
-					g_PWMProfile[profileIndex])*((double)(pullTimer % 500)/500.0)));
-				break;
-			case AUTO_PRESSURE_PROFILE_PULL:
-				pumpPWM = executePID_P(true, 0, profileIndex, pumpPWM, currentPressure, pullTimer);
-				break;
-			case AUTO_FLOW_PROFILE_PULL:
+			break;
+		case AUTO_PWM_PROFILE_PULL:
+			pumpPWM = (unsigned) 400 / 255 * ((g_PWMProfile[profileIndex]+
+				(g_PWMProfile[profileIndex+1] - 
+				g_PWMProfile[profileIndex])*((double)(pullTimer % 500)/500.0)));
+			break;
+		case AUTO_PRESSURE_PROFILE_PULL:
+			pumpPWM = executePID_P(true, 0, profileIndex, pumpPWM, currentPressure, pullTimer);
+			break;
+		case AUTO_FLOW_PROFILE_PULL:
+			pumpPWM = executePID_F(profileIndex, pumpPWM, sumFlowProfile, pullTimer);
+			break;
+		case SLAYER_LIKE_PULL:
+			pumpPWM = slayerMainPWM; 
+			break;	
+		case SLAYER_LIKE_PI_PRESSURE_PROFILE:	
+			pumpPWM = executePID_P(false, currentPotValue, profileIndex, pumpPWM, currentPressure, pullTimer); // calculate always but
+			if (pullTimer < 1000 || currentPressure < unionThreshold)                                                                         // override during PI
+				pumpPWM = slayerMainPWM;
+			break;
+		case AUTO_UNION_PROFILE_PULL:
+			//Need to define two setpoints and two Inputs
+			if (preInfusion) //if union is in preInfusion mode, it is running Flow Profiling
 				pumpPWM = executePID_F(profileIndex, pumpPWM, sumFlowProfile, pullTimer);
-				break;
-			case SLAYER_LIKE_PULL:
-				pumpPWM = slayerMainPWM; 
-				break;	
-			case SLAYER_LIKE_PI_PRESSURE_PROFILE:	
-				pumpPWM = executePID_P(false, currentPotValue, profileIndex, pumpPWM, currentPressure, pullTimer); // calculate always but
-				if (pullTimer < 1000 || currentPressure < 3.0)                                                                         // override during PI
-					pumpPWM = slayerMainPWM;
-				break;
-			case AUTO_UNION_PROFILE_PULL:
-				//Need to define two setpoints and two Inputs
-				if (preInfusion) //if union is in preInfusion mode, it is running Flow Profiling
-					pumpPWM = executePID_F(profileIndex, pumpPWM, sumFlowProfile, pullTimer);
-				else
-					pumpPWM = executePID_P(true, 0, profileIndex - unionSkew, pumpPWM, currentPressure, pullTimer);
-				break;
-		}
+			else
+				pumpPWM = executePID_P(true, 0, profileIndex - unionSkew, pumpPWM, currentPressure, pullTimer);
+			break;
 	}
 	// Action Time - operate pump & operate FLB solenoid
 	md.setM1Speed(constrain(pumpPWM, pumpMinPWM, pumpMaxPWM));
@@ -61,12 +56,14 @@ unsigned setpumpPWMbyMode(int profileIndex, long pullTimer, unsigned pumpPWM, fl
 
 boolean setFlowLimitBypass(unsigned pumpPWM, int profileIndex, boolean preInfusion, float currentPressure)
 {
-	if (g_cleanCycle || g_flushCycle)
-		preInfusion = false;
-	
 	if (preInfusion)
 	{
-		switch(g_pullMode)
+		if (profileIndex % 2 == 0) //flash the LED
+			ledColor('g');
+		else
+			ledColor('x');
+		
+		switch(g_pullMode)    //let's check if PI should continue....
 		{
 			case MANUAL_PULL:
 			case AUTO_PWM_PROFILE_PULL:
@@ -80,33 +77,15 @@ boolean setFlowLimitBypass(unsigned pumpPWM, int profileIndex, boolean preInfusi
 					preInfusion = false;
 				break;	
 			case SLAYER_LIKE_PI_PRESSURE_PROFILE:
-				if(profileIndex > 2 && currentPressure > 3.0)
+				if(profileIndex > 2 && currentPressure > unionThreshold)
 					preInfusion = false;
 		}
 	}
 
-	if (preInfusion) 
-	{
-#ifdef INVERT_FLB_OUTPUT 
-		digitalWrite(FLOW_LIMIT_BYPASS, HIGH);
-#else
-		digitalWrite(FLOW_LIMIT_BYPASS, LOW);
-#endif
-		if (profileIndex % 2 == 0)
-			digitalWrite(GREEN_LED, HIGH);
-		else
-			digitalWrite(GREEN_LED, LOW);
-	}
-	else
-	{
-#ifdef INVERT_FLB_OUTPUT  
-		digitalWrite(FLOW_LIMIT_BYPASS, LOW);
-#else
-		digitalWrite(FLOW_LIMIT_BYPASS, HIGH);
-#endif
-		digitalWrite(GREEN_LED, HIGH);
-	}
+	if (!preInfusion) 
+		ledColor('g');
 
+	setFLB(!preInfusion);
 	return preInfusion;	
 }
 
@@ -114,35 +93,68 @@ boolean setFlowLimitBypass(unsigned pumpPWM, int profileIndex, boolean preInfusi
 void initFlowLimitBypass()
 {
 	pinMode(FLOW_LIMIT_BYPASS, OUTPUT);
-
-#ifdef INVERT_FLB_OUTPUT 
-	digitalWrite(FLOW_LIMIT_BYPASS, HIGH); // turn off FLB solenoid
-#else
-	digitalWrite(FLOW_LIMIT_BYPASS, LOW); // turn off FLB solenoid
-#endif
-
+	setFLB(false);
 }
 
 void flushCycle()	
 {
+	Serial.println("Flush activated...");
 	detachInterrupt(digitalPinToInterrupt(GROUP_SOLENOID));
-#ifdef INVERT_FLB_OUTPUT  
-	digitalWrite(FLOW_LIMIT_BYPASS, LOW);
-#else
-	digitalWrite(FLOW_LIMIT_BYPASS, HIGH);
-#endif
-	digitalWrite(GREEN_LED, HIGH); 
-	digitalWrite(RED_LED, LOW);
 	g_newPull = false;
-	while (digitalRead(GROUP_SOLENOID) == LOW)
-		md.setM1Speed(constrain(cleanPWM, pumpMinPWM, pumpMaxPWM));
-	md.setM1Speed(0);	 //Shut down pump motor
-#ifdef INVERT_FLB_OUTPUT  
-	digitalWrite(FLOW_LIMIT_BYPASS, HIGH);
+	unsigned long flushTimer = millis();
+	unsigned long flushPauseTimer = flushTimer;
+	while ((millis() - flushPauseTimer) < 6000 && !Serial2.available()) //Pause is about 6 seconds...
+	{
+		while (digitalRead(GROUP_SOLENOID) == LOW && !Serial2.available())
+		{
+			setFLB(true); // turn on FLB
+			md.setM1Speed(constrain(flushPWM, pumpMinPWM, pumpMaxPWM));
+			flushPauseTimer = millis();
+			if (((millis() - flushTimer))/250 % 2 == 0)
+				ledColor('g');
+			else
+				ledColor('y');
+		}
+		md.setM1Speed(0); //Shut down pump motor
+		setFLB(false);
+		if (((millis() - flushTimer))/250 % 2 == 0)
+			ledColor('r');
+		else
+			ledColor('y');
+	}
+	resetSystem();
+
+}
+
+void setFLB (boolean enable)
+{
+#ifdef INVERT_FLB_OUTPUT 
+			digitalWrite(FLOW_LIMIT_BYPASS, !enable); // switch FLB solenoid
 #else
-	digitalWrite(FLOW_LIMIT_BYPASS, LOW);
-#endif	
-	g_flushCycle = false;
-	digitalWrite(GREEN_LED, LOW); 
-	digitalWrite(RED_LED, HIGH);
+			digitalWrite(FLOW_LIMIT_BYPASS, enable); 
+#endif
+}
+
+void ledColor (char color)
+{
+	if (color == 'r')
+	{
+		digitalWrite(GREEN_LED, LOW);
+		digitalWrite(RED_LED, HIGH);
+	}
+	else if (color == 'g')
+	{
+		digitalWrite(RED_LED, LOW);
+		digitalWrite(GREEN_LED, HIGH);
+	}
+	else if (color == 'y')
+	{
+		digitalWrite(RED_LED, HIGH);
+		digitalWrite(GREEN_LED, HIGH);
+	}
+	else
+	{
+		digitalWrite(RED_LED, LOW);
+		digitalWrite(GREEN_LED, LOW);
+	}
 }

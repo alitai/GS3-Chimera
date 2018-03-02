@@ -4,31 +4,38 @@
 
 void selectPIDbyMode()
 {
-	if (g_cleanCycle || g_flushCycle)
+	if (g_flushCycle)
 		return;  		 // Fixed PWM so no need to setup PID for cleaning or flushing
 	resetPID();
 	switch (g_pullMode)
 	{
-		case AUTO_PRESSURE_PROFILE_PULL: 
+		case AUTO_PRESSURE_PROFILE_PULL:
+			Serial.println("AUTO_PRESSURE_PROFILE_PULL");
 			startPressurePID();
 			break;
-		case AUTO_FLOW_PROFILE_PULL:	
+		case AUTO_FLOW_PROFILE_PULL:
+			Serial.println("AUTO_FLOW_PROFILE_PULL");		
 			startFlowPID();
 			break;
 		case AUTO_PWM_PROFILE_PULL:
-			stopPID(); // PID is not needed for PWM replay
+Serial.println("AUTO_PWM_PROFILE_PULL");
+		stopPID(); // PID is not needed for PWM replay
 			break;
 		case MANUAL_PULL:
+		Serial.println("MANUAL_PULL");
 			stopPID(); // Turn Off PID for Manual pull
 			break;
 		case SLAYER_LIKE_PULL:
+		Serial.println("SLAYER_LIKE_PULL");
 			stopPID(); // PID is not needed for Slayer replay
 			break;
 		case SLAYER_LIKE_PI_PRESSURE_PROFILE:
+		Serial.println("SLAYER_LIKE_PI_PRESSURE_PROFILE");
 			startPressurePID();
 			break;		
 		case AUTO_UNION_PROFILE_PULL:
 			//Need to define two PID loops
+			Serial.println("AUTO_UNION_PROFILE_PULL");
 			startPressurePID();
 			startFlowPID();
 			break;

@@ -14,6 +14,7 @@ void menuSetupSlayerParameters()
 				slayerPIPeriod = map(currentPotValue, 100, 950, 4, 70); // 100-950 for HTWF-1A22A12A 4 - 70 seconds
 				graphDrawSlayerProfile(); // Updates the graph with the new data...
 			}
+			EEPROM.update(38, slayerPIPeriod);
 			break;
 		case 2: 
 			if (potMoved)
@@ -21,197 +22,16 @@ void menuSetupSlayerParameters()
 				slayerMainPWM = map(currentPotValue, 0, 1023, slayerPIFlowRate, slayerMaxPWM);
 				graphDrawSlayerProfile(); // Updates the graph with the new data...
 			}
+			EEPROM.update(37, (byte)((long)slayerMainPWM * 255 / 400));
 			break;
-	}
-}
-
-//  Setup parameter adjustment screen
-void menuSetupSystemParameters()
-{
-	int currentPotValue = analogRead(CONTROL_POT); 
-	boolean potMoved = wasPotMoved(currentPotValue); 	//check if potentiometer was moved	
-  
-	if (g_selectedParameter == 1) 
-	{
-		if (potMoved)
-		{
-			FLBThresholdPWM = map(currentPotValue, 0, 1023, 0, 50);
-			graphDrawCurrentProfiles(); // Updates the graph with the new data... 
-			tft.fillRect(120, 0, 120, 10, bg_Color);
-		}
-		printSomething("FLBThresholdPWM = ", 0, 0, text_light_Color, NULL , false);
-	}
-	else
-		printSomething("FLBThresholdPWM = ", 0, 0, text_dark_Color, NULL , false);
-	tft.setCursor(120,0);
-	tft.print(FLBThresholdPWM);
-	tft.print(" Vm in %");
-
-	if (g_selectedParameter == 2) 
-	{
-		if (potMoved)
-		{
-			debounceCount = map(currentPotValue, 0, 1023, 0, 20);
-			tft.fillRect(120, 12, 120, 10, bg_Color);
-		}
-		printSomething("debounceCount = ", 0, 12, text_light_Color, NULL , false);
-	}
-	else
-		printSomething("debounceCount = ", 0, 12, text_dark_Color, NULL , false);
-	tft.setCursor(120,12);
-	tft.print(debounceCount);
-	
- 	if (g_selectedParameter == 3)
-	{
-		if (potMoved)
-		{
-			pumpMinPWM = map(currentPotValue, 0, 1023, 0, 400);
-			tft.fillRect(120, 24, 120, 10, bg_Color);
-		}	
-		printSomething("pumpMinPWM = ", 0, 24, text_light_Color, NULL, false);
-	}
-	else
-		printSomething("pumpMinPWM = ", 0, 24, text_dark_Color, NULL, false);
-	tft.setCursor(120,24);
-	tft.print(pumpMinPWM);
-	 
 			
-	if (g_selectedParameter == 4) 
-	{ 
-		if (potMoved)
-		{
-			pumpMaxPWM = map(currentPotValue, 0, 1023, 0, 400);
-			tft.fillRect(120, 36, 120, 10, bg_Color);  
-		}
-		printSomething("pumpMaxPWM = ", 0, 36, text_light_Color, NULL, false);
 	}
-	else
-		printSomething("pumpMaxPWM = ", 0, 36, text_dark_Color, NULL, false);
-	tft.setCursor(120,36);
-	tft.print(pumpMaxPWM);
-	
-	if (g_selectedParameter == 5) 
-	{
-		if (potMoved)
-		{
-			mlPerFlowMeterPulse = ((float)map(currentPotValue, 0, 1023, 0, 10))/1000;
-			tft.fillRect(120, 48, 120, 10, bg_Color);  
-		}
-		printSomething("ml/pulse = ", 0, 48, text_light_Color, NULL, false);
-	}
-	else
-		printSomething("ml/pulse = ", 0, 48, text_dark_Color, NULL, false);
-	tft.setCursor(120,48);
-	tft.print(mlPerFlowMeterPulse);
-	tft.print(" ml/Pulse"); 
-	
-	if (g_selectedParameter == 6) 
-	{
-		if (potMoved)
-		{
-			unionThreshold = ((float)map(currentPotValue, 0, 1023, 0, 900))/1000;
-			tft.fillRect(120, 60, 120, 10, bg_Color);
-		}
-		printSomething("unionThreshold = ", 0 , 60, text_light_Color, NULL, false);
-	}
-	else
-		printSomething("unionThreshold = ", 0 , 60, text_dark_Color, NULL, false);
-	tft.setCursor(120,60);
-	tft.print(unionThreshold);
-	tft.print(" bar");  
-				
-	if (g_selectedParameter == 7) 
-	{
-		if (potMoved)
-		{
-			Kpp = ((double)map(currentPotValue, 0, 1023, 0, 1000))/50;
-			tft.fillRect(60, 75, 60, 10, bg_Color);
-		}
-		printSomething("Kpp = ", 0 , 75, text_light_Color, NULL, false);
-	}
-	else
-		printSomething("Kpp = ", 0 , 75, text_dark_Color, NULL, false);
-	tft.setCursor(60,75);
-	tft.print(Kpp);
-			
-	if (g_selectedParameter == 8) 
-	{
-		if (potMoved)
-		{
-			Kpi = ((double)map(currentPotValue, 0, 1023, 0, 1000))/50;
-			tft.fillRect(60, 87, 60, 10, bg_Color);
-		}
-		printSomething("Kpi = ", 0 , 87, text_light_Color, NULL, false);
-		
-	}
-	else
-		printSomething("Kpi = ", 0 , 87, text_dark_Color, NULL, false);
-	tft.setCursor(60,87);
-	tft.print(Kpi);
-	
-	if (g_selectedParameter == 9) 
-	{
-		if (potMoved)
-		{
-			Kpd = ((double)map(currentPotValue, 0, 1023, 0, 1000))/50;
-			tft.fillRect(60, 99, 60, 10, bg_Color);  
-		}
-		printSomething("Kpd = ", 0 , 99, text_light_Color, NULL, false);
-	}
-	else
-		printSomething("Kpd = ", 0 , 99, text_dark_Color, NULL, false);
-	tft.setCursor(60,99);
-	tft.print(Kpd);
-	
-	if (g_selectedParameter == 10) 
-	{
-		if (potMoved)
-		{
-			Kfp = ((double)map(currentPotValue, 0, 1023, 0, 1000))/50;
-			tft.fillRect(180, 75, 60, 10, bg_Color);
-		}
-		printSomething("Kfp = ", 120 , 75, text_light_Color, NULL, false);
-	}
-	else
-		printSomething("Kfp = ", 120 , 75, text_dark_Color, NULL, false);
-	tft.setCursor(180,75);
-	tft.print(Kfp);
-	
-	if (g_selectedParameter == 11) 
-	{
-		if (potMoved)
-		{
-			Kfi = ((double)map(currentPotValue, 0, 1023, 0, 1000))/50;
-			tft.fillRect(180, 87, 60, 10, bg_Color);
-		}
-		printSomething("Kfi = ", 120 , 87, text_light_Color, NULL, false);
-	}
-	else
-		printSomething("Kfi = ", 120 , 87, text_dark_Color, NULL, false);
-	tft.setCursor(180,87);
-	tft.print(Kfi);
-	
-	if (g_selectedParameter == 12) 
-	{	
-		if (potMoved)
-		{
-			Kfd = ((double)map(currentPotValue, 0, 1023, 0, 1000))/50;
-			tft.fillRect(180, 99, 60, 10, bg_Color);
-		}
-		printSomething("Kfd = ", 120 , 99, text_light_Color, NULL, false);
-	}
-	else
-		printSomething("Kfd = ", 120 , 99, text_dark_Color, NULL, false);
-	tft.setCursor(180,99);
-	tft.print(Kfd);
-
-	printSomething("Note: Settings implemented immediately. Press commit to save to EEPROM.", 0, 119, ILI9341_RED, NULL, false);
 }
 
 boolean wasPotMoved(int currentPotValue)
 {	
 	//debounce the move (to reduce flicker)
-	int potDelta = 2;
+	int potDelta = 5;
 	if ((currentPotValue > g_lastParameterPotValue + potDelta) || (currentPotValue < g_lastParameterPotValue - potDelta))
 	{
 		g_lastParameterPotValue = currentPotValue;
@@ -220,3 +40,162 @@ boolean wasPotMoved(int currentPotValue)
 	else
 		return false;
 }
+
+void editParametersOverSerial()
+{
+	int editNow;
+	boolean edit = false;
+	while (Serial.available() > 0)
+	{
+		editNow = Serial.read(); 
+	}
+	if (editNow == 'E' || editNow == 'e') 
+		edit = true;
+	
+	while (edit)
+	{
+		readEEPROMtoSerial();
+		
+		Serial.println("");
+		Serial.println("Chimera is disabled. Edit System Parameters:");
+		Serial.println("Press a letter to change the value of its parameter. Press X to eXit.");
+		Serial.println("Make sure you set your terminal to send Newline line endings");
+		Serial.println();
+
+		char command;
+		do
+		{
+			command = toupper (Serial.read ());
+		} 
+		while 
+			(command != 'A' && command != 'B' && command != 'C' && command != 'D' && command != 'E' 
+			&& command != 'F' && command != 'G' && command != 'H' && command != 'I'	&& command != 'J' 
+			&& command != 'K' && command != 'L' && command != 'M' && command != 'N' && command != 'X');
+
+		if (command == 'X')
+		{
+			Serial.println("Chimera is now enabled. To enter parameter editor enter E.");
+			edit = false;
+			return;
+		}
+		
+		int flushChar;
+		do
+		{
+			flushChar = Serial.read();
+		}	while (flushChar != '\n');
+		
+		Serial.print("Please enter new value for ");
+		Serial.print(command);
+		Serial.println(":");
+		String inString = "";
+		boolean newValue = false;
+		while (!newValue) 
+		{
+			while (Serial.available() > 0)
+			{
+				int inChar = Serial.read();
+				if (inChar != '\n') 
+					// As long as the incoming byte is not a newline, convert the incoming byte to a char and add it to the string
+					inString += (char)inChar;
+				else 
+					newValue = true;
+			}
+		}
+		
+		
+		switch (command)
+		{
+		case 'A':
+			FLBThresholdPWM = inString.toInt();
+			Serial.print("New FLBThresholdPWM value is: ");
+			Serial.println(FLBThresholdPWM, DEC);
+			EEPROM.update(0, (byte)(FLBThresholdPWM / 4));
+			break;
+		case 'B':
+			debounceCount = inString.toInt();
+			Serial.print("New debounceCount value is: ");
+			Serial.println(debounceCount, DEC);
+			EEPROM.update(1, debounceCount);
+			break;
+		case 'C':
+			pumpMinPWM = inString.toInt();
+			Serial.print("New pumpMinPWM value is: ");
+			Serial.println(pumpMinPWM, DEC);
+			EEPROM.update(2, (byte)((long)pumpMinPWM * 255 / 400));
+			break;
+		case 'D':
+			pumpMaxPWM = inString.toInt();
+			Serial.print("New pumpMaxPWM value is: ");
+			Serial.println(pumpMaxPWM, DEC);
+			EEPROM.update(3, (byte)((long)pumpMaxPWM * 255 / 400));
+			break;			
+		case 'E':
+			mlPerFlowMeterPulse = inString.toFloat();
+			Serial.print("New mlPerFlowMeterPulse value is: ");
+			Serial.println(mlPerFlowMeterPulse, 3);
+			EEPROM.put(4, (float)mlPerFlowMeterPulse);
+			break;
+		case 'G':
+			Kpp = inString.toFloat();
+			Serial.print("New Kpp value is: ");
+			Serial.println(Kpp, 2);
+			EEPROM.put(12, Kpp);
+			break;
+		case 'H':
+			Kpi = inString.toFloat();
+			Serial.print("New Kpi value is: ");
+			Serial.println(Kpi, 2);
+			EEPROM.put(16, Kpi);
+			break;
+		case 'I':
+			Kpd = inString.toFloat();
+			Serial.print("New Kpd value is: ");
+			Serial.println(Kpd, 2);
+			EEPROM.put(20, Kpd);
+			break;
+		case 'J':
+			Kfp = inString.toFloat();
+			Serial.print("New Kfp value is: ");
+			Serial.println(Kfp, 2);
+			EEPROM.put(24, Kfp);
+			break;
+		case 'K':
+			Kfi = inString.toFloat();
+			Serial.print("New Kfi value is: ");
+			Serial.println(Kfi, 2);
+			EEPROM.put(28, Kfi);
+			break;
+		case 'L':
+			Kfd = inString.toFloat();
+			Serial.print("New Kfd value is: ");
+			Serial.println(Kfd, 2);
+			EEPROM.put(32, Kfd);
+			break;
+		case 'M':
+			slayerMainPWM = inString.toInt(); 
+			Serial.print("New slayerMainPWM value is: ");
+			Serial.println(slayerMainPWM, DEC);
+			EEPROM.update(37, (byte)((long)slayerMainPWM * 255 / 400));
+			break;
+		case 'N':
+			slayerPIPeriod = inString.toInt(); // EEPROM.read(38);
+			Serial.print("New slayerPIPeriod value is: ");
+			Serial.println(slayerPIPeriod, DEC);
+			EEPROM.update(38, slayerPIPeriod);
+			break;
+		}
+		
+		Serial.println("Please enter Y to continue...");
+
+		do
+		{
+			command = toupper (Serial.read ());
+		} 
+		while 
+			(command != 'Y');
+			
+		Serial.println("");
+	}
+}	
+

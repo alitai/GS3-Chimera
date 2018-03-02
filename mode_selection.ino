@@ -31,8 +31,8 @@ void pullModeSwitching(byte softKey)
 	if (g_selectedParameter != 0)    
 		if (g_currentMenu == 3 )
 			menuSetupSlayerParameters();
-		else if (g_currentMenu == 6)
-			menuSetupSystemParameters();
+		//else if (g_currentMenu == 6)
+		//	menuSetupSystemParameters();
 		else g_selectedParameter = 0;
 		
 	if(softKey == 99)    //return code of "99" means no valid input - quit
@@ -54,8 +54,8 @@ void pullModeSwitching(byte softKey)
 			if (softKey == 2)
 				g_pullMode = AUTO_PWM_PROFILE_PULL;
 			else if (softKey == 3)
-				g_pullMode = AUTO_PRESSURE_PROFILE_PULL;
-			menuDrawSoftKeys("AutoPWM", (g_pullMode == AUTO_PWM_PROFILE_PULL), "Auto-PP", (g_pullMode == AUTO_PRESSURE_PROFILE_PULL));
+				g_pullMode = SLAYER_LIKE_PI_PRESSURE_PROFILE; // AUTO_PRESSURE_PROFILE_PULL;
+			menuDrawSoftKeys("AutoPWM", (g_pullMode == AUTO_PWM_PROFILE_PULL), "Auto-PP", (g_pullMode == SLAYER_LIKE_PI_PRESSURE_PROFILE));//AUTO_PRESSURE_PROFILE_PULL));
 			break;
 
 		case 2:
@@ -130,23 +130,24 @@ void pullModeSwitching(byte softKey)
 			}
 			if (softKey == 2)
 			{
-				g_debugDisplay = false;
-				dashboardSetup();
+				//g_debugDisplay = false;
+				//dashboardSetup();
 			}
 			else if (softKey == 3)
 			{
-				g_debugDisplay = true;
-				tft.fillRect(0, 0, 240, 140, bg_Color);
+				//g_debugDisplay = true;
+				//tft.fillRect(0, 0, 240, 140, bg_Color);
 			}
-			menuDrawSoftKeys("Normal", !g_debugDisplay, "Debug", g_debugDisplay);
+			menuDrawSoftKeys("Normal", true, "Debug", false);
 			break;
 
 		case 6:
+			/*
 			if (softKey == 4) // Enter setupParameter mode...
 			{
-				tft.fillRect(0, 0, 240, 140, bg_Color);
-				g_selectedParameter = 0;
-				menuSetupSystemParameters();
+				//tft.fillRect(0, 0, 240, 140, bg_Color);
+				//g_selectedParameter = 0;
+				//menuSetupSystemParameters();
 			}
 			else if (softKey == 2)
 			{
@@ -154,55 +155,22 @@ void pullModeSwitching(byte softKey)
 					g_selectedParameter = 0;
 				g_selectedParameter++;
 				g_lastParameterPotValue = analogRead(CONTROL_POT);
-				menuSetupSystemParameters();
+				//menuSetupSystemParameters();
 				menuDrawSoftKeys("Next", false, "Commit",false);
 			}
 			else if (softKey == 3)
 			{
 				writeSWParameterstoEEPROM();
 				g_selectedParameter = 0;
-				menuSetupSystemParameters();
+			//	menuSetupSystemParameters();
 				menuDrawSoftKeys("Select", false, "Saved",true);
 			}
 			//else
 				menuDrawSoftKeys("Select", false, "Commit",false);
+			*/
 			break;
 	}
 	g_modeSwitchIncomplete = false;
-}
-
-void fastModeSwitch()
-{	
-	switch(g_pullMode)
-	{
-		case SLAYER_LIKE_PULL:
-			g_currentMenu = 3;
-			g_cleanCycle = false;
-			g_modeSwitchIncomplete = true;
-			break;
-	
-		case AUTO_PRESSURE_PROFILE_PULL:
-			g_currentMenu = 1;
-			g_cleanCycle = false;
-			g_modeSwitchIncomplete = true;
-			break;
-			
-		case AUTO_FLOW_PROFILE_PULL:
-			g_currentMenu = 2;
-			g_cleanCycle = false;
-			g_modeSwitchIncomplete = true; 
-			break;
-	
-		case MANUAL_PULL:
-			g_currentMenu = 0;
-			g_cleanCycle = false;
-			g_modeSwitchIncomplete = true; 
-			break;
-
-		case AUTO_UNION_PROFILE_PULL:	
-		default:
-			break;
-	}
 }
 
 void gotoSleep()
@@ -228,7 +196,6 @@ void gotoSleep()
 	while(!ts.Pressed())
 #endif
 	{
-#ifdef SERIAL_CONTROL
 		if (Serial2.available()) //wait until 3d5 button pressed...
 		{
 			byte serialCommand = Serial2.read();                  //flush whatever button was pressed...
@@ -244,13 +211,19 @@ void gotoSleep()
 			else
 				break;                                             // Wake up...
 		}
-#endif
 	}
 
 #ifdef ACAIA_LUNAR_INTEGRATION
 	connectScale();	
 #endif
-	initializeDisplay();	
+	initializeDisplay();
+	//tft.setRotation(2);
+	//tft.fillScreen(bg_Color);
+	//dashboardSetup();
+	//graphDrawCurrentProfiles();	
+	
+	//g_currentMenu = 0; 
+	//pullModeSwitching(0); // Setup menu system & switch mode to manual profil
 }
 
 double sleepTimerReset()

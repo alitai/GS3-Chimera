@@ -44,32 +44,29 @@ void serialControl()
 		case 0x11: 	// This is the 1 shot button
 			g_pullMode = SLAYER_LIKE_PULL;
 			g_currentMenu = 3;
-			g_cleanCycle = false;
+			g_flushCycle = false;
 			g_modeSwitchIncomplete = true;        // This variable ensures the mode is fully initialized even if the interrupt comes quickly! 
 			break;
 	    case 0x12:  // This is the 2 shot button
-			g_pullMode = AUTO_PRESSURE_PROFILE_PULL;
+			g_pullMode = SLAYER_LIKE_PI_PRESSURE_PROFILE;//AUTO_PRESSURE_PROFILE_PULL;
 			g_currentMenu = 1;
-			g_cleanCycle = false;
+			g_flushCycle = false;
 			g_modeSwitchIncomplete = true; 
 			break;
 		case 0x13: // This is the 1 mug button
 			g_pullMode = AUTO_FLOW_PROFILE_PULL;
 			g_currentMenu = 2;
-			g_cleanCycle = false;
+			g_flushCycle = false;
 			g_modeSwitchIncomplete = true; 
 			break;
 		case 0x14: // This is the 2 mug button
 			g_pullMode = MANUAL_PULL;
 			g_currentMenu = 0;
-			g_cleanCycle = false;
+			g_flushCycle = false;
 			g_modeSwitchIncomplete = true; 
 			break;
 		case 0x19: // This is the Fn button
-		/*	g_modeSwitchIncomplete = false;
-			g_cleanCycle = false;*/
 			g_flushCycle = true;
-			//md.setM1Speed(constrain((int)(cleanPWM * 4.0), pumpMinPWM, pumpMaxPWM)); // Just flush - do not do anyhting else... 
 			break;
 		default:
 			break;
@@ -79,19 +76,3 @@ void serialControl()
 	sleepTimer = sleepTimerReset(); 
 }
 
-/*
-//Flush is pressing the Fn button. Enabling Controlled flush means that the FLsuh is also measured and controlled. 
-//#define CONTROLLED_FLUSH
-
-#ifdef CONTROLLED_FLUSH 
-		case 0x19: // This is the Fn button
-			g_modeSwitchIncomplete = false;
-			g_cleanCycle = false;
-			g_flushCycle = true;
-			break;
-#else
-		case 0x19: // This is the Fn button - just used to flush
-			md.setM1Speed(constrain((int)(cleanPWM * 4.0), pumpMinPWM, pumpMaxPWM));
-#endif
-
-*/

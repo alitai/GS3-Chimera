@@ -96,3 +96,59 @@ void connectScale()
 	scaleReconnectionTimer = millis();
 #endif
 }
+
+#ifdef ACAIA_LUNAR_INTEGRATION
+//Display Battery
+void displayBattery()
+{
+	if (scaleConnected)
+	{
+		tft.drawRect(230, 105, 4, 5, ILI9341_LIGHTGREY); //+210
+		tft.drawRect(213, 103, 18, 9, ILI9341_LIGHTGREY);
+		long h = 16 * scaleBattery / 100;
+		
+		if (scaleBattery > 40)
+		{
+			tft.drawPixel(216,112,bg_Color);
+			tft.drawPixel(227,102,bg_Color);
+			tft.fillRect(214+h, 104, 16-h, 7, bg_Color);
+			tft.fillRect(214, 104, h, 7, ILI9341_GREEN); 
+		}
+		else if (scaleBattery > 20)
+		{
+			tft.drawPixel(216,112,bg_Color);
+			tft.drawPixel(227,102,bg_Color);
+			tft.fillRect(214+h, 104, 16-h, 7, bg_Color);			
+			tft.fillRect(214, 104, h, 7, ILI9341_YELLOW); 
+		}
+		else if (scaleBattery > 14)
+		{
+			tft.drawPixel(216,112,bg_Color);
+			tft.drawPixel(227,102,bg_Color);
+			tft.fillRect(217, 104, 13, 7, bg_Color);			
+			tft.fillRect(214, 104, 3, 7, ILI9341_RED);
+		}
+		else if (scaleBattery > 8)
+		{
+			tft.drawPixel(216,112,bg_Color);
+			tft.drawPixel(227,102,bg_Color);
+			tft.fillRect(216, 104, 14, 7, bg_Color);			
+			tft.fillRect(214, 104, 2, 7, ILI9341_RED);
+		}
+		else
+		{
+			tft.fillRect(216, 104, 14, 7, bg_Color);			
+			tft.fillRect(214, 104, 2, 7, ILI9341_MAROON);
+			tft.drawLine(216,112,227,102, text_light_Color);
+		}
+	}
+	else
+	{
+		tft.drawPixel(216,112,bg_Color);
+		tft.drawPixel(227,102,bg_Color);
+		tft.fillRect(231, 105, 5, 5, bg_Color);
+		tft.fillRect(213, 103, 18, 9, bg_Color);
+		
+	}
+}
+#endif
