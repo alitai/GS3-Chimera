@@ -82,4 +82,7 @@
 		Removed parameter manipulation from UI
 		Removed debug code
 		
+	v0.39
+		Added SINGLE_PUMP mode (per TH)
+		
 */

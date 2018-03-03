@@ -149,6 +149,12 @@ D53 SD_NSS
 #define FLOW_LIMIT_BYPASS 13 // D13 - Digital output to flow control bypass solenoid (0V - flow limited; 5V - bypass enabled)
 #define STROBE_RELAY 10 // D10 - Will simulate a 3d5 button push 
 
+#define SINGLE_PUMP // Used if the gear pump is also used for autofill
+#ifdef SINGLE_PUMP
+#define PUMP_RELAY 5 // Pump on detection to control filling of tank and tea water
+#define RED_LED 22 // D22 - LED lights RED during standby (TH: changed from 5 to 22 to release one pin for pump on detection)
+#endif
+
 #ifdef TS_STMPE
 #define TS_CS 8 //  D8 - TouchScreen CS
 #endif

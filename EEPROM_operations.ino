@@ -18,6 +18,7 @@
 //	36		layerPIFlowRate		byte
 //	37		slayerMainPWM		byte
 //	38		slayerPIPeriod		byte
+//  39      slayerMaxPWM		byte
 //
 // 	Profile data structure
 //	97		Size of PWMprofile	byte
@@ -26,10 +27,6 @@
 //	100-301	PWM Profile			bytes (2 per second)
 //	302-503	Pressure Profile	bytes (2 per second)
 //	504-705	Flow Profile		bytes (2 per second)
-//
-//  Assaf 
-//  39      slayerMaxPWM		byte
-//
 //
 //*********************************************************************
 

@@ -1,4 +1,4 @@
-#define CURRENT_VERSION "V0.38"
+#define CURRENT_VERSION "V0.39"
 
 #include "VNH5019MotorShieldMega.h"
 #include "configuration.h"
@@ -320,6 +320,24 @@ void loop(void)
 		displayBattery();
 #endif
 		displayPressureandWeight();
+
+#ifdef SINGLE_PUMP		
+		 // Check if pump relay by 3D5 is switched on - if yes assume tank fill cycle
+		if (digitalRead(PUMP_RELAY) == LOW)
+			md.setM1Speed(constrain(flushPWM, pumpMinPWM, pumpMaxPWM));
+		else
+			md.setM1Speed(0); //Shut down pump motor
+		/*	//pumpSpeedByte = (float) cleanPWM * 2.55;
+			// Serial.println("Fill");
+			// Action Time - operate pump & operate FLB solenoid
+			//md.setM1Speed(constrain(((int)((float)250 * 400.0 / 255.0)), pumpMinPWM, pumpMaxPWM)); 
+		
+
+		{  
+		md.setM1Speed(0); //Shut down pump motor
+		}*/
+#endif
+
 	
 		if (millis() > sleepTimer)
 		{
