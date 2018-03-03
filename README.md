@@ -1,4 +1,5 @@
 
+
 GS3 "Chimera"  
 	Electronic "Paddle" and profile replay control application for La Marzocco GS/3 AV
 	
@@ -82,3 +83,6 @@ GS3 "Chimera"
 		Moved parameter manipulation to Serial port & ESP8266 Telnet port
 		Removed parameter manipulation from UI
 		Removed debug code
+		
+	v0.39
+		Added SINGLE_PUMP mode (per TH)
