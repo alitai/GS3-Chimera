@@ -12,6 +12,8 @@
 #include "MCUFRIEND_kbv.h"
 #endif
 
+#include "color_definitions.h"
+
 #include "Fonts/FreeSans9pt7b.h"
 #include "Fonts/FreeSans12pt7b.h"
 #include "Adafruit_STMPE610.h"
