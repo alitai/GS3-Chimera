@@ -1,5 +1,3 @@
-
-
 GS3 "Chimera"  
 	Electronic "Paddle" and profile replay control application for La Marzocco GS/3 AV
 	
@@ -24,7 +22,9 @@ GS3 "Chimera"
 	Technical capabilities:
 		Can connect to 3d5 for pass through control (using a serial connection)
 		Can identify cleaning cycles (if using serial connection)
-		Profiles & system parameters stored on EEPROM
+
+
+Profiles & system parameters stored on EEPROM
 		Extensive menu system
 		Potentiometer for paddle control; also used to modify parameters
 		Full graphing of all parameter data and pull data
@@ -86,3 +86,4 @@ GS3 "Chimera"
 		
 	v0.39
 		Added SINGLE_PUMP mode (per TH)
+		Moved color definitions to color_definitions.h (per TH)
