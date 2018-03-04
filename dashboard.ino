@@ -4,7 +4,7 @@
 	
 void initializeDisplay()
 {	
-	tft.setRotation(2);
+//	tft.setRotation(2);
 	tft.fillScreen(bg_Color);
 	dashboardSetup();
 	graphDrawCurrentProfiles();

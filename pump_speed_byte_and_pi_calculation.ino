@@ -15,28 +15,34 @@ unsigned setPumpPWMbyMode(int profileIndex, long pullTimer, unsigned pumpPWM, fl
 			else
 				pumpPWM = constrain(map(currentPotValue, 520, 930, FLBThresholdPWM, pumpMaxPWM), FLBThresholdPWM, pumpMaxPWM);
 #else
-			pumpPWM = (unsigned) currentPotValue * 400 / 1024; //converts int to byte for standard potentiometer control
+			pumpPWM = (unsigned)(float)currentPotValue * pumpMaxPWM / 1024; //converts int to byte for standard potentiometer control
 #endif
 			break;
+
 		case AUTO_PWM_PROFILE_PULL:
 			pumpPWM = (unsigned) 400 / 255 * ((g_PWMProfile[profileIndex]+
 				(g_PWMProfile[profileIndex+1] - 
 				g_PWMProfile[profileIndex])*((double)(pullTimer % 500)/500.0)));
 			break;
+
 		case AUTO_PRESSURE_PROFILE_PULL:
 			pumpPWM = executePID_P(true, 0, profileIndex, pumpPWM, currentPressure, pullTimer);
 			break;
+
 		case AUTO_FLOW_PROFILE_PULL:
 			pumpPWM = executePID_F(profileIndex, pumpPWM, sumFlowProfile, pullTimer);
 			break;
+
 		case SLAYER_LIKE_PULL:
 			pumpPWM = slayerMainPWM; 
 			break;	
+
 		case SLAYER_LIKE_PI_PRESSURE_PROFILE:	
 			pumpPWM = executePID_P(false, currentPotValue, profileIndex, pumpPWM, currentPressure, pullTimer); // calculate always but
 			if (pullTimer < 1000 || currentPressure < unionThreshold)                                                                         // override during PI
 				pumpPWM = slayerMainPWM;
 			break;
+
 		case AUTO_UNION_PROFILE_PULL:
 			//Need to define two setpoints and two Inputs
 			if (preInfusion) //if union is in preInfusion mode, it is running Flow Profiling
@@ -50,6 +56,8 @@ unsigned setPumpPWMbyMode(int profileIndex, long pullTimer, unsigned pumpPWM, fl
 	return pumpPWM;
 }
 
+
+
 //*******************************************************************************
 // Calculate FLB cutoff for each pull mode and activate/deactivate solenoid
 //*******************************************************************************
@@ -62,7 +70,7 @@ boolean setFlowLimitBypass(unsigned pumpPWM, int profileIndex, boolean preInfusi
 			ledColor('g');
 		else
 			ledColor('x');
-		
+
 		switch(g_pullMode)    //let's check if PI should continue....
 		{
 			case MANUAL_PULL:
@@ -72,23 +80,22 @@ boolean setFlowLimitBypass(unsigned pumpPWM, int profileIndex, boolean preInfusi
 				if (pumpPWM > FLBThresholdPWM + 1)
 					preInfusion = false;
 				break;
+
 			case SLAYER_LIKE_PULL:
 				if (profileIndex > slayerPIPeriod << 1)
 					preInfusion = false;
 				break;	
+
 			case SLAYER_LIKE_PI_PRESSURE_PROFILE:
 				if(profileIndex > 2 && currentPressure > unionThreshold)
 					preInfusion = false;
 		}
 	}
-
 	if (!preInfusion) 
 		ledColor('g');
-
 	setFLB(!preInfusion);
 	return preInfusion;	
 }
-
 
 void initFlowLimitBypass()
 {
@@ -123,7 +130,6 @@ void flushCycle()
 			ledColor('y');
 	}
 	resetSystem();
-
 }
 
 void setFLB (boolean enable)

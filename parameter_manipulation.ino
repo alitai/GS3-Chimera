@@ -14,7 +14,7 @@ void menuSetupSlayerParameters()
 				slayerPIPeriod = map(currentPotValue, 100, 950, 4, 70); // 100-950 for HTWF-1A22A12A 4 - 70 seconds
 				graphDrawSlayerProfile(); // Updates the graph with the new data...
 			}
-			EEPROM.update(38, slayerPIPeriod);
+			EEPROM.update(43, slayerPIPeriod);
 			break;
 		case 2: 
 			if (potMoved)
@@ -22,7 +22,7 @@ void menuSetupSlayerParameters()
 				slayerMainPWM = map(currentPotValue, 0, 1023, slayerPIFlowRate, slayerMaxPWM);
 				graphDrawSlayerProfile(); // Updates the graph with the new data...
 			}
-			EEPROM.update(37, (byte)((long)slayerMainPWM * 255 / 400));
+			EEPROM.put(41, slayerMainPWM);
 			break;
 			
 	}
@@ -43,14 +43,7 @@ boolean wasPotMoved(int currentPotValue)
 
 void editParametersOverSerial()
 {
-	int editNow;
-	boolean edit = false;
-	while (Serial.available() > 0)
-	{
-		editNow = Serial.read(); 
-	}
-	if (editNow == 'E' || editNow == 'e') 
-		edit = true;
+	boolean edit = true;
 	
 	while (edit)
 	{
@@ -103,86 +96,85 @@ void editParametersOverSerial()
 			}
 		}
 		
-		
 		switch (command)
 		{
 		case 'A':
 			FLBThresholdPWM = inString.toInt();
 			Serial.print("New FLBThresholdPWM value is: ");
 			Serial.println(FLBThresholdPWM, DEC);
-			EEPROM.update(0, (byte)(FLBThresholdPWM / 4));
+			EEPROM.put(0, FLBThresholdPWM);
 			break;
 		case 'B':
 			debounceCount = inString.toInt();
 			Serial.print("New debounceCount value is: ");
 			Serial.println(debounceCount, DEC);
-			EEPROM.update(1, debounceCount);
+			EEPROM.update(2, (byte)debounceCount);
 			break;
 		case 'C':
 			pumpMinPWM = inString.toInt();
 			Serial.print("New pumpMinPWM value is: ");
 			Serial.println(pumpMinPWM, DEC);
-			EEPROM.update(2, (byte)((long)pumpMinPWM * 255 / 400));
+			EEPROM.put(3, pumpMinPWM);
 			break;
 		case 'D':
 			pumpMaxPWM = inString.toInt();
 			Serial.print("New pumpMaxPWM value is: ");
 			Serial.println(pumpMaxPWM, DEC);
-			EEPROM.update(3, (byte)((long)pumpMaxPWM * 255 / 400));
+			EEPROM.put(5, pumpMaxPWM);
 			break;			
 		case 'E':
 			mlPerFlowMeterPulse = inString.toFloat();
 			Serial.print("New mlPerFlowMeterPulse value is: ");
 			Serial.println(mlPerFlowMeterPulse, 3);
-			EEPROM.put(4, (float)mlPerFlowMeterPulse);
+			EEPROM.put(8, (float)mlPerFlowMeterPulse);
 			break;
 		case 'G':
 			Kpp = inString.toFloat();
 			Serial.print("New Kpp value is: ");
 			Serial.println(Kpp, 2);
-			EEPROM.put(12, Kpp);
+			EEPROM.put(16, Kpp);
 			break;
 		case 'H':
 			Kpi = inString.toFloat();
 			Serial.print("New Kpi value is: ");
 			Serial.println(Kpi, 2);
-			EEPROM.put(16, Kpi);
+			EEPROM.put(20, Kpi);
 			break;
 		case 'I':
 			Kpd = inString.toFloat();
 			Serial.print("New Kpd value is: ");
 			Serial.println(Kpd, 2);
-			EEPROM.put(20, Kpd);
+			EEPROM.put(24, Kpd);
 			break;
 		case 'J':
 			Kfp = inString.toFloat();
 			Serial.print("New Kfp value is: ");
 			Serial.println(Kfp, 2);
-			EEPROM.put(24, Kfp);
+			EEPROM.put(28, Kfp);
 			break;
 		case 'K':
 			Kfi = inString.toFloat();
 			Serial.print("New Kfi value is: ");
 			Serial.println(Kfi, 2);
-			EEPROM.put(28, Kfi);
+			EEPROM.put(32, Kfi);
 			break;
 		case 'L':
 			Kfd = inString.toFloat();
 			Serial.print("New Kfd value is: ");
 			Serial.println(Kfd, 2);
-			EEPROM.put(32, Kfd);
+			EEPROM.put(36, Kfd);
 			break;
 		case 'M':
 			slayerMainPWM = inString.toInt(); 
 			Serial.print("New slayerMainPWM value is: ");
 			Serial.println(slayerMainPWM, DEC);
-			EEPROM.update(37, (byte)((long)slayerMainPWM * 255 / 400));
+			EEPROM.put(41, slayerMainPWM);
 			break;
 		case 'N':
 			slayerPIPeriod = inString.toInt(); // EEPROM.read(38);
 			Serial.print("New slayerPIPeriod value is: ");
 			Serial.println(slayerPIPeriod, DEC);
-			EEPROM.update(38, slayerPIPeriod);
+			EEPROM.update(43, slayerPIPeriod);
 			break;
 		}
 		
