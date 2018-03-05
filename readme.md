@@ -84,5 +84,8 @@
 		
 	v0.39
 		Added SINGLE_PUMP mode (per TH)
+		Store PWM as Int (no more byte casting)
 		
+	v0.40
+		Added telemetry (Megunolink)
 */

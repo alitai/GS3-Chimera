@@ -1,392 +1,203 @@
-#define CURRENT_VERSION "V0.39"
-
-
+#define CURRENT_VERSION "V0.40"
 
 #include "VNH5019MotorShieldMega.h"
-
 #include "configuration.h"
 
-
-
 #include "SPI.h"
-
 #include "Adafruit_GFX.h"
-
 #ifdef ADAFRUIT_ILI9341
-
 #include "Adafruit_ILI9341.h"
-
 #endif
 
 #ifdef MCUFRIEND 
-
 #include "MCUFRIEND_kbv.h"
-
 #endif
 
-
-
 #include "color_definitions.h"
-
-
-
 #include "Fonts/FreeSans9pt7b.h"
-
 #include "Fonts/FreeSans12pt7b.h"
-
 #include "Adafruit_STMPE610.h"
-
-
-
 #include "PID_v1_GS3_EP.h"
-
 #include "EEPROM.h"
-
 #include "Average.h" 
 
+#ifdef MEGUNOLINK
+#include "MegunoLink.h"
+TimePlot megunolinkPlot;
+#endif
 
 
 #ifdef TFT_TOUCH
-
 #include <TFT_Touch.h>
-
 /* Create an instance of the touch screen library */
-
 TFT_Touch ts = TFT_Touch(DCS, DCLK, DIN, DOUT);
-
 #endif
-
 
 
 #ifdef TS_STMPE
-
 Adafruit_STMPE610 ts = Adafruit_STMPE610(TS_CS);
-
 #endif
-
-
 
 TS_Point p;
 
-
-
 // Graphics driver
-
 #ifdef MCUFRIEND
-
 MCUFRIEND_kbv tft;
-
 #endif
-
 #ifdef ADAFRUIT_ILI9341
-
 Adafruit_ILI9341 tft = Adafruit_ILI9341(TFT_CS, TFT_DC);
-
 #endif
-
-
 
 // Motor PWM controller is an automotive VNH5019 bridge. 20kHz PWM frequency is used as below. Please note the library was modified 
-
 // to support a single VNH5019 chip (instead of a dual chip carrier)
-
 // https://forum.pololu.com/t/modified-vnh5019-shield-library-for-20khz-pwm-with-mega/5178/2
-
 VNH5019MotorShieldMega md = VNH5019MotorShieldMega(INA1, INB1, EN1DIAG1, CS1);
 
-
-
 // Define 2 PID loops - one for pressure and one for flow....
-
 double g_PIDSetpoint_F, g_PIDInput_F, g_PIDOutput_F, g_PIDInput_P, g_PIDOutput_P, g_PIDSetpoint_P;
-
 PID pressurePID(&g_PIDInput_P, &g_PIDOutput_P, &g_PIDSetpoint_P,Kpp,Kpi,Kpd, DIRECT);
-
 PID flowPID(&g_PIDInput_F, &g_PIDOutput_F, &g_PIDSetpoint_F,Kfp,Kfi,Kfd, DIRECT);
 
-
-
 // Initialize cyclical averages for Pressure and Flow Rate 
-
 Average<float> g_averageP(6);
-
 Average<unsigned long> g_averageF(4); // Pulse rate can be as low as 4-5 per second. So we select 4 to ensure that the update rates are reasonable.
 
 
-
 #ifdef MQTT
-
 #include <ELClient.h>
-
 #include <ELClientCmd.h>
-
 #include <ELClientMqtt.h>
 
-
-
 // Initialize a connection to esp-link using the normal hardware serial port both for
-
 // SLIP and for debug messages.
-
 ELClient esp(&Serial, &Serial);
 
-
-
 // Initialize CMD client (for GetTime)
-
 ELClientCmd cmd(&esp);
 
-
-
 // Initialize the MQTT client
-
 ELClientMqtt mqtt(&esp);
 
-
-
 // Callback made from esp-link to notify of wifi status changes
-
 // Here we just print something out for grins
-
 void wifiCb(void* response) {
-
   ELClientResponse *res = (ELClientResponse*)response;
-
   if (res->argc() == 1) {
-
     uint8_t status;
-
     res->popArg(&status, 1);
-
-
-
     if(status == STATION_GOT_IP) {
-
       Serial.println("WIFI CONNECTED");
-
     } else {
-
       Serial.print("WIFI NOT READY: ");
-
       Serial.println(status);
-
     }
-
   }
-
 }
-
-
 
 bool connected;
-
-
-
 // Callback when MQTT is connected
-
 void mqttConnected(void* response) {
-
   Serial.println("MQTT connected!");
-
   mqtt.subscribe("/esp-link/1");
-
   mqtt.subscribe("/hello/world/#");
-
   //mqtt.subscribe("/esp-link/2", 1);
-
   //mqtt.publish("/esp-link/0", "test1");
-
   connected = true;
-
 }
-
-
 
 // Callback when MQTT is disconnected
-
 void mqttDisconnected(void* response) {
-
   Serial.println("MQTT disconnected");
-
   connected = false;
-
 }
-
-
 
 // Callback when an MQTT message arrives for one of our subscriptions
-
 void mqttData(void* response) {
-
   ELClientResponse *res = (ELClientResponse *)response;
-
-
-
   Serial.print("Received: topic=");
-
   String topic = res->popString();
-
   Serial.println(topic);
-
-
-
   Serial.print("data=");
-
   String data = res->popString();
-
   Serial.println(data);
-
 }
-
-
 
 void mqttPublished(void* response) {
-
   Serial.println("MQTT published");
-
 }
 
-
-
 static int count;
-
 static uint32_t last;
-
 #endif
 
-
-
 // Current pull profiles - 200 byte arrays of measurements - each bin is 500mSec
-
 // PWM Voltage Profile (as sent to the VNH5019 is kept in a 200 byte array)
-
 // Brew boiler pressure log is the average pressure by the end of the 500mSec period
-
 // Flow log - each bin has the number of pulses received by the end of the 500mSec period
-
 byte g_PWMProfile[201] , g_pressureProfile[201], g_flowProfile[201];  
-
-
 
 unsigned long g_lastMillis = 0;
 
-					   
-
 #define PRINT_SPACE tft.print(" ") // for convenience
 
-
-
 unsigned char g_pullMode; 
-
 int g_currentMenu, g_selectedParameter = 0, g_lastParameterPotValue;
-
 boolean g_modeSwitchIncomplete = false; 
-
 boolean g_flushCycle = true; //flush cycled DO NOT imply a Serial port signal. Hence it is default!
-
 volatile boolean g_activePull = false, g_newPull = false; // Used by interrupts
-
 volatile unsigned long g_currentFlowPulseMillis, g_flowPulseCount, g_flowPulseCountPreInfusion; // Used by interrupts
-
 #define UNION_PRESSURE 30
-
-
 
 double sleepTimer;
 
-
-
 // Settings for Acaia Scale
-
 #ifdef ACAIA_LUNAR_INTEGRATION
-
 #include "Scale.h"
-
 Scale *scale = NULL;
-
 unsigned long startTime;
-
 int state = 0;
-
 bool isRunning = false;
-
 float scaleWeight;
-
 float lastScaleWeight;
-
 unsigned char scaleBattery;
-
 float currentDose;
-
 float lastCurrentDose;
-
 boolean scaleConnected = false;
 
 unsigned long scaleReconnectionTimer;
-
 unsigned long scaleIdleTimer; 
-
 #endif
 
-
-
 //********************************************************************
-
 // Motor Error
-
 //********************************************************************
 
 void stopIfFault()
-
 {
-
 	if (md.getM1Fault())
-
 	{
-
 		Serial.println("M1 fault");
-
 		while (1);
-
 	}
-
 }
 
-
-
 //*************************************************************************
-
 // Interrupt handlers 
-
 // 1. When Solenoid is activated (ignore spurious triggers if pull is active)
-
 // 2. Flowmeter pulse counter
-
 //*************************************************************************
 
 void pullEspresso()  // Checks if group solenoid is powered up and if so triggers a new pull
-
 {
-
 	if (!g_activePull)
-
 		g_newPull = true; // interrupt effective only if not actively pulling a shot!
-
 }  
 
-
-
 void flowPulseReceived(boolean preInfusion) // receives flow pulses from the Gicar flow sensor
-
 {
-
 	g_flowPulseCount++;
-
 	g_currentFlowPulseMillis = millis(); 
-
 }
-
-
 
 //********************************************************************
 // Setup...
@@ -406,7 +217,6 @@ void setup()
 	//resetSystem(); // reset hardware states and interrupts
 
 	// Initialize hardware
-
 	md.init(); // Initialize VNH5019 pump driver
 	tft.begin(); // Initialize displays
 	tft.setRotation(2);
@@ -470,6 +280,15 @@ void setup()
 #endif
 
 	Serial.println("Chimera is now enabled. To enter parameter editor enter E.");
+	
+	//Megunolink 
+#ifdef MEGUNOLINK
+	megunolinkPlot.SetTitle("GS/3 Pull Telemetry");
+	megunolinkPlot.SetXlabel("Time");
+	megunolinkPlot.SetYlabel("Value");
+	//megunolinkPlot.SetSeriesProperties("ADCValue", Plot::Magenta, Plot::Solid, 2, Plot::Square);
+#endif
+	
 }
 
 //********************************************************************
@@ -598,6 +417,11 @@ void loop(void)
 		// Clear existing averages in the stack...
 		g_averageF.clear();
 		g_averageP.clear();
+		
+		// Megunolink graphing
+#ifdef MEGUNOLINK
+		megunolinkPlot.Clear();
+#endif
 
 		// if system did not finish prepping a serial pull - do it now!
 		if (g_modeSwitchIncomplete)
@@ -682,6 +506,16 @@ void loop(void)
 	
 			// Update dashboard and graph
 			dashboardUpdate(pumpPWM, profileIndex, g_averageP.mean(), lastFlowPulseCount, preInfusion);
+			
+// Megunolink graphing
+#ifdef MEGUNOLINK
+			megunolinkPlot.SendFloatData("Bar", g_averageP.mean(), 1);
+			megunolinkPlot.SendData("PWM", pumpPWM);
+			megunolinkPlot.SendData("pulses", lastFlowPulseCount);
+			megunolinkPlot.SendFloatData("ml/min", flowRate(preInfusion), 1);
+			megunolinkPlot.SendFloatData("gr", scaleWeight, 1);
+#endif 
+			
 
 #ifdef MQTT
 //			mqtt.publish("/gs3/pressure", g_averageP.mean());

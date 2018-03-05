@@ -18,6 +18,10 @@
 // Define MQTT channel
 //#define MQTT
 
+// Megunolink telemetry
+// For use over an ESP8266 also needs the com0com com2tcp adapter. See https://hackaday.io/page/1304-virtual-serial-port-tunnel-to-use-with-esp-link.
+#define MEGUNOLINK
+
 // If the output relay inverts (like some modules do) uncomment the next line
 #define INVERT_FLB_OUTPUT
 

@@ -4,7 +4,6 @@
 	
 void initializeDisplay()
 {	
-//	tft.setRotation(2);
 	tft.fillScreen(bg_Color);
 	dashboardSetup();
 	graphDrawCurrentProfiles();
@@ -52,16 +51,7 @@ void dashboardUpdate(unsigned pumpPWM, int profileIndex, float averagePressure, 
     // Since there are so few pulses, run a running average of the time between pulses and use that to get flow rate resolution.
     printSomething(NULL, 50, 40 , flowRate_Color, &FreeSans9pt7b , true);
     tft.fillRect(44, 26, 75, 17, bg_Color);
-	if(g_averageF.mean() != 0.0f)
-	{
-		if(preInfusion)
-			tft.print((float)mlPerFlowMeterPulsePreInfusion * 60.0 * 1000.0 / (float)g_averageF.mean(), 0);
-		else
-			tft.print((float)mlPerFlowMeterPulse * 60.0 * 1000.0 / (float)g_averageF.mean(), 0);
-	}
-	else
-		tft.print("...");
-    
+	tft.print(flowRate(preInfusion), 0);
 	tft.setTextColor(text_dark_Color); 
     tft.print(" /m");
     
@@ -160,4 +150,34 @@ void displayPressureandWeight()
 	}
 }
 
+//*******************************************************************************
+// Measure, average, calibrate and display boiler pressure and flow rates
+//********************************************************************************
 
+float measurePressure()
+{  
+#ifdef CALIBRATE_PRESSURE
+	float pressure = analogRead(PRESSURE_SENSOR_INPUT); // Just show the integer reading
+#else
+	float pressure = (float)(map((int)analogRead(PRESSURE_SENSOR_INPUT), LOW_CALIBRATION_PRESSURE_READING, HIGH_CALIBRATION_PRESSURE_READING, LOW_CALIBRATION_PRESSURE, HIGH_CALIBRATION_PRESSURE)) / 10.0 ; // Every loop we measure and average pressure in boiler
+#endif
+ 
+
+	g_averageP.push(pressure); // add the measurement to the rolling average
+	return pressure; //we return pressure for the PID PP loop
+
+}
+
+float flowRate(boolean preInfusion)
+{
+	float flowRate = 0.0;
+	if(g_averageF.mean() != 0.0f)
+	{
+		if(preInfusion)
+			flowRate = (float)mlPerFlowMeterPulsePreInfusion * 60.0 * 1000.0 / (float)g_averageF.mean();
+		else
+			flowRate = (float)mlPerFlowMeterPulse * 60.0 * 1000.0 / (float)g_averageF.mean();
+	}
+	
+	return flowRate;
+}
