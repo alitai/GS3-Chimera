@@ -1,4 +1,5 @@
-GS3 "Chimera"  
+/*
+	GS/3 "Chimera"  
 	Electronic "Paddle" and profile replay control application for La Marzocco GS/3 AV
 	
 	This software and associated Arduino based hardware converts a GS/3 into a powerful pressure 
@@ -22,9 +23,7 @@ GS3 "Chimera"
 	Technical capabilities:
 		Can connect to 3d5 for pass through control (using a serial connection)
 		Can identify cleaning cycles (if using serial connection)
-
-
-Profiles & system parameters stored on EEPROM
+		Profiles & system parameters stored on EEPROM
 		Extensive menu system
 		Potentiometer for paddle control; also used to modify parameters
 		Full graphing of all parameter data and pull data
@@ -57,18 +56,17 @@ Profiles & system parameters stored on EEPROM
 		Enlarged graph view
 		
 	v0.33
-		Added support for Otto Controls HTWF Hall Effect control paddle with center indent aligned to FLB threshold 
-		(PI until center indent, main pull beyond it)
+		Added support for Otto Controls HTWF Hall Effect control paddle with center indent aligned to FLB threshold (PI until center indent, main pull beyond it)
 	
 	v0.34
 		Added color variable support
 		Corrected some Acaia Lunar support enable/disable issues
 		Added support for ITEAD and other non Adafruit displays (larger, but the displays aren't of similar quality)
 		Corrected Flush behavior
-
+		
 	v0.35
 		Corrected some bad pumpPWM casting
-
+		
 	v0.36
 		Added Combo mode 7: Slayer like PI and subsequent Pressure Profile... SLAYER_LIKE_PI_PRESSURE_PROFILE
 		
@@ -86,4 +84,11 @@ Profiles & system parameters stored on EEPROM
 		
 	v0.39
 		Added SINGLE_PUMP mode (per TH)
-		Moved color definitions to color_definitions.h (per TH)
+		Store PWM as Int (no more byte casting)
+		
+	v0.40
+		Added telemetry (Megunolink)
+		
+	v0.41
+		Added FLOW_PRESSURE_PROFILE mode - FP: PID Flow (left side of paddle) up to unionThreshold. Then PP PID Pressure (right side of paddle)
+*/
