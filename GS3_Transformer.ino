@@ -483,7 +483,7 @@ void loop(void)
 		long capturedFlowPulseMillis = g_flowPulseMillis;
 #ifdef GICAR_FLOWMETER
 	    //Gicar flowmeters have very low pulse rates. To enhance resolution we will calculate the reciprocal of the time between pulses (1/T).
-		if (captureFlowPulseMillis > lastFlowPulseMillis) // If there is a new flow meter pulse send the timing for flow rate calculation
+		if (capturedFlowPulseMillis > lastFlowPulseMillis) // If there is a new flow meter pulse send the timing for flow rate calculation
 		{	
 			if (preInfusion) 
 				g_flowPulseCountPreInfusion = capturedFlowPulseCount; //

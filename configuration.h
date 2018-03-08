@@ -55,6 +55,8 @@ float mlPerFlowMeterPulse = 0.0240f; // Calibrated values.... Spec is 0.025ml/pu
 float mlPerFlowMeterPulsePreInfusion = 0.0230f;
 #endif
 
+//#define SINGLE_PUMP // Used if the gear pump is also used for autofill
+
 //*******************************************************************************
 // Calibrate boiler pressure readings 
 //********************************************************************************
@@ -148,6 +150,8 @@ D53 SD_NSS
 #define LCD_RESET A4 // Can alternately just connect to Arduino's reset pin
 */
 
+
+
 //***********************************************************************
 // PINS: Global Parameters and Variables & Arduino Mega R3 Pins
 //***********************************************************************
@@ -158,7 +162,9 @@ D53 SD_NSS
 #define FLOW_COUNT_INPUT 2 // D2 - INT0 Flow counter interrupt pin
 #define GROUP_SOLENOID 3 // D3 - INT1 Group solenoid 220v detector is on pin 3 (an interrupt pin)
 #define INB1 4 // D4 - VNH5019 Motor driver default
+#ifndef SINGLE_PUMP
 #define RED_LED 5 // D5 - LED lights RED during standby
+#endif
 #define EN1DIAG1 6 // D6 - VNH5019 Motor driver default
 #define GREEN_LED 7 // D7 - LED lights GREEN during a pull
 //  _PWM1 = 11      // D11 - VNH5019 Motor driver default set in VNH5019MotorShieldMega.h file
@@ -166,7 +172,6 @@ D53 SD_NSS
 #define FLOW_LIMIT_BYPASS 13 // D13 - Digital output to flow control bypass solenoid (0V - flow limited; 5V - bypass enabled)
 #define STROBE_RELAY 10 // D10 - Will simulate a 3d5 button push 
 
-//#define SINGLE_PUMP // Used if the gear pump is also used for autofill
 #ifdef SINGLE_PUMP
 #define PUMP_RELAY 5 // Pump on detection to control filling of tank and tea water
 #define RED_LED 22 // D22 - LED lights RED during standby (TH: changed from 5 to 22 to release one pin for pump on detection)

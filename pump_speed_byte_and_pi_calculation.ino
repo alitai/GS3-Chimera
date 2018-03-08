@@ -16,7 +16,7 @@ unsigned setPumpPWMbyMode(unsigned profileIndex, unsigned long pullTimer, unsign
 			else
 				pumpPWM = constrain(map(currentPotValue, 520, 930, FLBThresholdPWM, pumpMaxPWM), FLBThresholdPWM, pumpMaxPWM);
 #else
-			pumpPWM = (unsigned)(float)currentPotValue * pumpMaxPWM / 1024; //converts int to byte for standard potentiometer control
+			pumpPWM = (unsigned)((float)currentPotValue * pumpMaxPWM / 1024); //converts int to byte for standard potentiometer control
 #endif
 			break;
 
@@ -51,7 +51,7 @@ unsigned setPumpPWMbyMode(unsigned profileIndex, unsigned long pullTimer, unsign
 			{
 				PIDSetValue = constrain(map(currentPotValue, 100, 520, PID_MIN_FLOW, PID_MAX_FLOW), PID_MIN_FLOW, PID_MAX_FLOW);
 				pumpPWM = executePID_F(false, PIDSetValue, profileIndex, pumpPWM, sumFlowProfile, pullTimer, preInfusion);
-			//	pumpPWM = constrain(map(currentPotValue, 100, 520, 0, 220), 0, 220);
+				pumpPWM = constrain(map(currentPotValue, 100, 520, 0, 220), 0, 220);
 			}
 			else
 			{
