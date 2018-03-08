@@ -24,15 +24,16 @@ void selectandDrawProfilebyMode()
 		case AUTO_FLOW_PROFILE_PULL:	
 		case AUTO_PWM_PROFILE_PULL:
 		case AUTO_UNION_PROFILE_PULL:
-		case SLAYER_LIKE_PI_PRESSURE_PROFILE:	
+		case SLAYER_LIKE_PI_PRESSURE_PROFILE:
+		case FLOW_PRESSURE_PROFILE:
 			graphDrawCurrentProfiles();
 			break;
 			
 		case MANUAL_PULL:
 			graphDrawEmptyGraph(); // Clear existing graph and draw an empty one
 			graphDrawFLB(); //Draw line where FLB activates
-		//	clearProfiles();
-		graphDrawCurrentProfiles(); //test
+			//	clearProfiles();
+			graphDrawCurrentProfiles(); //test
 			break;
 			
 		case SLAYER_LIKE_PULL:
@@ -49,14 +50,14 @@ void graphDrawSlayerProfile()
 
 	// Draw Flow Limited flow line (this isn't a measured number - just shows a diagram that the flow is "low")
 	tft.fillRect(0, 177, 33, 80, bg_Color);
-	printSomething(" PI", 10, 256 - (slayerPIFlowRate * perPixel) , text_dark_Color, NULL , false);
+	printSomething(" PI", 10, 256 - (slayerPIFlowRate * perPixel) , text_light_Color, NULL , false);
 	tft.drawFastHLine(34, 260 - (slayerPIFlowRate * perPixel), slayerPIPeriod << 1 , axis_minor_Color);	
 
 	// Draw the Slayer Main PWM speed (the pressure decay is physical)
 	printSomething(NULL, 100 + slayerPIPeriod , 250 - (slayerMainPWM / 4 * perPixel) , PWM_BGColor, NULL , false);
 	tft.print(slayerMainPWM);
 	tft.print("%");
-	printSomething("PWM", 10, 256 - (slayerMainPWM * perPixel), text_dark_Color, NULL , false);
+	printSomething("PWM", 10, 256 - (slayerMainPWM / 4 * perPixel), text_light_Color, NULL , false);
 	tft.drawFastHLine(34 + (slayerPIPeriod << 1), 260 - (slayerMainPWM / 4 * perPixel) , 200 - (slayerPIPeriod << 1) , axis_minor_Color);
 	
 	// Draw the Slayer PI Period vertical line

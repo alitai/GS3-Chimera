@@ -54,7 +54,7 @@ void serialControl()
 			g_modeSwitchIncomplete = true; 
 			break;
 		case 0x13: // This is the 1 mug button
-			g_pullMode = AUTO_FLOW_PROFILE_PULL;
+			g_pullMode = FLOW_PRESSURE_PROFILE;//AUTO_FLOW_PROFILE_PULL;
 			g_currentMenu = 2;
 			g_flushCycle = false;
 			g_modeSwitchIncomplete = true; 

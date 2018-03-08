@@ -7,7 +7,6 @@ void initializeDisplay()
 	tft.fillScreen(bg_Color);
 	dashboardSetup();
 	graphDrawCurrentProfiles();
-	
 	g_currentMenu = 0; 
 	pullModeSwitching(0); // Setup menu system & switch mode to manual profiling
 }
@@ -32,7 +31,7 @@ void dashboardUpdate(unsigned pumpPWM, int profileIndex, float averagePressure, 
     //PWM setting display
     printSomething(NULL, 42, 13 , PWM_Color, &FreeSans9pt7b , true);
     tft.fillRect(41, 1, 60, 17, bg_Color);
-    tft.print((unsigned)pumpPWM / 4);
+    tft.print(pumpPWM / 4);
     tft.setTextColor(text_dark_Color);  
     tft.print(" %");
     
@@ -56,7 +55,6 @@ void dashboardUpdate(unsigned pumpPWM, int profileIndex, float averagePressure, 
     tft.print(" /m");
     
     // Boiler Pressure and Weight display - handled by function displayPressureandWeight();
-
 	
     //Pull Timer display  
     tft.setTextColor(timer_Color);
@@ -90,6 +88,7 @@ void displayPressureandWeight()
 		tft.print(constrain((float)g_averageP.mean(), 0.0, 13.0) , 1);
 #endif
 		printSomething("bar",190 , 13 , text_dark_Color, &FreeSans9pt7b , false);
+		// megunolinkPlot.SendFloatData("Bar", g_averageP.mean(), 2); // send pressure data when idling
 
 
 #ifdef ACAIA_LUNAR_INTEGRATION
@@ -162,22 +161,22 @@ float measurePressure()
 	float pressure = (float)(map((int)analogRead(PRESSURE_SENSOR_INPUT), LOW_CALIBRATION_PRESSURE_READING, HIGH_CALIBRATION_PRESSURE_READING, LOW_CALIBRATION_PRESSURE, HIGH_CALIBRATION_PRESSURE)) / 10.0 ; // Every loop we measure and average pressure in boiler
 #endif
  
-
-	g_averageP.push(pressure); // add the measurement to the rolling average
+ g_averageP.push(pressure); // add the measurement to the rolling average
 	return pressure; //we return pressure for the PID PP loop
 
 }
 
-float flowRate(boolean preInfusion)
+double flowRate(boolean preInfusion)
 {
-	float flowRate = 0.0;
+	double flowRate;
 	if(g_averageF.mean() != 0.0f)
 	{
 		if(preInfusion)
-			flowRate = (float)mlPerFlowMeterPulsePreInfusion * 60.0 * 1000.0 / (float)g_averageF.mean();
+			flowRate = (double)mlPerFlowMeterPulsePreInfusion * 60.0 * 1000.0 / g_averageF.mean();
 		else
-			flowRate = (float)mlPerFlowMeterPulse * 60.0 * 1000.0 / (float)g_averageF.mean();
+			flowRate = (double)mlPerFlowMeterPulse * 60.0 * 1000.0 / g_averageF.mean();
 	}
-	
+	else
+		flowRate = 0.0;
 	return flowRate;
 }

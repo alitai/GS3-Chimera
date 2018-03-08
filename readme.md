@@ -88,4 +88,7 @@
 		
 	v0.40
 		Added telemetry (Megunolink)
+		
+	v0.41
+		Added FLOW_PRESSURE_PROFILE mode - FP: PID Flow (left side of paddle) up to unionThreshold. Then PP PID Pressure (right side of paddle)
 */

@@ -10,6 +10,7 @@
 #define SLAYER_LIKE_PULL 5						// Single speed pump - low-flow PI by FLB-OFF for set time followed by FLB ON 
 #define LEVER_LIKE_PULL 6						// Not currently implemented
 #define SLAYER_LIKE_PI_PRESSURE_PROFILE 7   	// Low flow PI (FLB OFF) until pressure reaches 4 bar aand then manual pressure profiling
+#define FLOW_PRESSURE_PROFILE 8					// FP: PID Flow (left side of paddle) up to unionThreshold. Then PP PID Pressure (right side of paddle)
 #define FLUSH 10
 
 // For debugging, this sends the entire EEPROM content to the serial monitor
@@ -20,7 +21,7 @@
 
 // Megunolink telemetry
 // For use over an ESP8266 also needs the com0com com2tcp adapter. See https://hackaday.io/page/1304-virtual-serial-port-tunnel-to-use-with-esp-link.
-#define MEGUNOLINK
+//#define MEGUNOLINK
 
 // If the output relay inverts (like some modules do) uncomment the next line
 #define INVERT_FLB_OUTPUT
@@ -41,6 +42,18 @@
 
 // Sleep timer puts the GUI (but not the Arduino or peripherals to sleep (in minutes)
 #define SLEEP_TIMER_MINUTES 5  
+
+//Flowmeter Selection
+//#define GICAR_FLOWMETER
+#define DIGMESA_FLOWMETER // #9NB-0100/01A http://www.digmesa.com/wp-content/uploads/9NB-01xx_01_x_GB.pdf
+#ifdef GICAR_FLOWMETER
+float mlPerFlowMeterPulse = 0.48f; // 0.42f;// ml/pulse
+float mlPerFlowMeterPulsePreInfusion = 0.34f; // 0.42f;// ml/pulse
+#endif
+#ifdef DIGMESA_FLOWMETER
+float mlPerFlowMeterPulse = 0.0240f; // Calibrated values.... Spec is 0.025ml/pulse
+float mlPerFlowMeterPulsePreInfusion = 0.0230f;
+#endif
 
 //*******************************************************************************
 // Calibrate boiler pressure readings 
@@ -190,40 +203,41 @@ D53 SD_NSS
 #define VRES 320 /* Default screen resulution for Y axis */
 #endif
 
-
-
-
 //***********************************************************************
 // Defaults for system parameters
 // NOTE: These are default parameters that are only used for new Arduinos (in which case they get written into the EEPROM as defaults). 
 // Once the system is in operation they will get overwritten by readSWParametersfromEEPROM() 
-// To overwrite and force parameter rewrite from code quote the following line
+// To overwrite and force parameter rewrite from code unquote the following line
 //***********************************************************************
+//#define OVERWRITE_EEPROM_WITH_DEFAULTS
 
-#define READ_PARAMETERS_FROM_EEPROM
- 
-// PumpPWM (min, max, slayer, FLB Threshold): 0-400 correlates to 0-100% PWM 
 byte debounceCount = 3, slayerPIPeriod = 15, slayerPIFlowRate = 5; 
-
-//Flowmeter Selection
-//#define GICAR_FLOWMETER
-#define DIGMESA_FLOWMETER // #9NB-0100/01A http://www.digmesa.com/wp-content/uploads/9NB-01xx_01_x_GB.pdf
-#ifdef GICAR_FLOWMETER
-float mlPerFlowMeterPulse = 0.48f; // 0.42f;// ml/pulse
-float mlPerFlowMeterPulsePreInfusion = 0.34f; // 0.42f;// ml/pulse
-#endif
-#ifdef DIGMESA_FLOWMETER
-float mlPerFlowMeterPulse = 0.025f; //0.0025f; // Spec is 0.025f;// ml/pulse
-//float mlPerFlowMeterPulsePreInfusion = 0.060f; //0.0038f; // 0.42f;// ml/pulse
-float mlPerFlowMeterPulsePreInfusion = 0.025f;
-#endif
 double unionThreshold = 4.0d; // in bar - at this point the system will switch from FP to PP
-//double Kpp = 5, Kpi = 5, Kpd = 1, Kfp = 5, Kfi = 5, Kfd = 1; 
-// double Kpp = 80, Kpi = 12, Kpd = 3.....
-double Kpp = 60, Kpi = 20, Kpd = 3, Kfp = 5, Kfi = 5, Kfd = 1; 
+
+//************************************************************************
+// PID parameters
+//************************************************************************
 const unsigned PIDSampleTime = 100; // in mSec
 
+// Pressure PID loop (pressure profiling)
+double Kpp = 60, Kpi = 20, Kpd = 3; 
+#define PID_MIN_PRESSURE 4
+#define PID_MAX_PRESSURE 10
+#define PRESSURE_PID_MIN_PWM 0 
+#define PRESSURE_PID_MAX_PWM 220
+
+// Flow PID loop (flow profiling)
+double Kfp = 5, Kfi = 5, Kfd = 1;
+#define PID_MIN_FLOW 0
+#define PID_MAX_FLOW 150  // maximum debit in ml/min while in PI
+#define FLOW_PID_MIN_PWM 0
+#define FLOW_PID_MAX_PWM 220
+
+//***********************************************************************
+// Pump Speeds (in PWM)
+// 0-400 correlates to 0-100% PWM 
 // PWM speed is from -400 to 400. Pumps cannot be driven in reverse, so from 0-400. 
+//***********************************************************************
 unsigned FLBThresholdPWM = 60;
 unsigned  pumpMaxPWM = 220, pumpMinPWM = 0; 
 const unsigned slayerMaxPWM = 190; // Maximum - minimum pump PWM (0-400)
@@ -233,8 +247,6 @@ const unsigned flushPWM = 168; // 42% PWM for flush and cleaning cycle
 // Removed FP and PP can correct up to y percent lower than profile PWM (double)
 //#define PWM_TRACK_UPPER_BOUND 15.0 // FP and PP can correct up to x percent higher than profile PWM (double)
 //#define PWM_TRACK_LOWER_BOUND 90.0 // FP and PP can correct up to y percent lower than profile PWM (double)
-
 // Lunar MAC address is defined in device_HM10.h file.
-
 // Programming with ESP8266: 
 // bash -c "/mnt/d/Users/assaf.HOME/Documents/ESP8266/esp-link-3.2.47.alpha/megaflash.sh  192.168.200.55 /mnt/d/Users/assaf.HOME/Documents/Arduino/GS3_Transformer/GS3_Transformer.ino.mega.hex"

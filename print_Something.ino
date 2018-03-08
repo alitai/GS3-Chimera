@@ -16,7 +16,7 @@
 //********************************************************************
 void printSomething(char* text, unsigned x, unsigned y, char* selectedColor, const GFXfont* selectedFont, boolean clearBackground)
 {
-	// How to conatenate chars?
+	// How to concatenate chars?
 	tft.setTextColor(selectedColor);
 	tft.setFont(selectedFont);
 	if (clearBackground)

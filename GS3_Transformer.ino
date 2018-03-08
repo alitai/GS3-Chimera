@@ -1,4 +1,4 @@
-#define CURRENT_VERSION "V0.40"
+#define CURRENT_VERSION "V0.41"
 
 #include "VNH5019MotorShieldMega.h"
 #include "configuration.h"
@@ -60,8 +60,12 @@ PID flowPID(&g_PIDInput_F, &g_PIDOutput_F, &g_PIDSetpoint_F,Kfp,Kfi,Kfd, DIRECT)
 
 // Initialize cyclical averages for Pressure and Flow Rate 
 Average<float> g_averageP(6);
+#ifdef GICAR_FLOWMETER
 Average<unsigned long> g_averageF(4); // Pulse rate can be as low as 4-5 per second. So we select 4 to ensure that the update rates are reasonable.
-
+#endif
+#ifdef DIGMESA_FLOWMETER
+Average<unsigned long> g_averageF(10); // Pulse rate is 20x higher which can also be noisier
+#endif
 
 #ifdef MQTT
 #include <ELClient.h>
@@ -145,7 +149,7 @@ int g_currentMenu, g_selectedParameter = 0, g_lastParameterPotValue;
 boolean g_modeSwitchIncomplete = false; 
 boolean g_flushCycle = true; //flush cycled DO NOT imply a Serial port signal. Hence it is default!
 volatile boolean g_activePull = false, g_newPull = false; // Used by interrupts
-volatile unsigned long g_currentFlowPulseMillis, g_flowPulseCount, g_flowPulseCountPreInfusion; // Used by interrupts
+volatile unsigned long g_flowPulseMillis, g_flowPulseCount, g_flowPulseCountPreInfusion, g_lastFlowPulseCount; // Used by interrupts
 #define UNION_PRESSURE 30
 
 double sleepTimer;
@@ -196,7 +200,10 @@ void pullEspresso()  // Checks if group solenoid is powered up and if so trigger
 void flowPulseReceived(boolean preInfusion) // receives flow pulses from the Gicar flow sensor
 {
 	g_flowPulseCount++;
-	g_currentFlowPulseMillis = millis(); 
+//#ifdef GICAR_FLOWMETER
+	g_flowPulseMillis = millis();
+//#endif	
+
 }
 
 //********************************************************************
@@ -210,6 +217,10 @@ void setup()
 	pinMode(GREEN_LED, OUTPUT);
 	pinMode(RED_LED, OUTPUT);
 	pinMode(STROBE_RELAY, OUTPUT);
+#ifdef SINGLE_PUMP
+	pinMode(PUMP_RELAY, INPUT_PULLUP);
+#endif
+
 	ledColor('r');
 	Serial2.begin(1200, SERIAL_8E2);	// opens serial port for Gicar 3d5, sets data rate to 1200 bps, 8 bits even parity, 2 stop bits
 
@@ -233,16 +244,17 @@ void setup()
     ts.setRotation(1);
 #endif
 
-#ifdef READ_PARAMETERS_FROM_EEPROM
+#ifdef OVERWRITE_EEPROM_WITH_DEFAULTS
+	// initialize EEPROM (if Arduino is new) 
+	Serial.println("Writing parameters to EEPROM...");
+	writeSWParameterstoEEPROM();
+	writeSlayerParameterstoEEPROM();
+#else 
 	//Read parameters and saved profiles from EEPROM. Initialize EEPROM if new...
-		Serial.println("Reading EEPROM Parameters...");
-		readSWParametersfromEEPROM();
-		readProfilesfromEEPROM();
-		readSlayerParametersfromEEPROM();
-#else // initialize EEPROM (if Arduino is new) 
-		Serial.println("Writing parameters to EEPROM...");
-		writeSWParameterstoEEPROM();
-		writeSlayerParameterstoEEPROM();
+	Serial.println("Reading EEPROM Parameters...");
+	readSWParametersfromEEPROM();
+	readProfilesfromEEPROM();
+	readSlayerParametersfromEEPROM();
 #endif
 	
 	// Create default dashboard, graph and menus 
@@ -297,13 +309,13 @@ void setup()
 
 void loop(void) 
 {
-	int profileIndex, lastProfileIndex;
+	unsigned profileIndex, lastProfileIndex;
 	byte countOffCycles;
-	long lastFlowPulseCount;
+	unsigned long lastFlowPulseCount;
 	unsigned long pullStartTime, pullTimer, lastFlowPulseMillis;
 	unsigned pumpPWM;
-	int sumFlowProfile;
-	int unionSkew; // alignment delta between pressure profile and union threshold point
+	unsigned sumFlowProfile;
+	unsigned unionSkew; // alignment delta between pressure profile and union threshold point
 	boolean preInfusion = false;
 
 #ifdef ACAIA_LUNAR_INTEGRATION		
@@ -324,8 +336,6 @@ void loop(void)
 	lastCurrentDose = 0;
 	lastScaleWeight = 0;
 #endif
-
-
 
 //****************************************************************************
 // Idle - Wait for Serial trigger or Group Solenoid interrupt... 
@@ -398,7 +408,7 @@ void loop(void)
 		if(scaleConnected)	scale->tare();
 #endif
 
-		// Clear Gicar flowmeter counters and attach interrupt 
+		// Clear flowmeter counters and attach interrupt 
 		g_flowPulseCount = 0; 
 		g_flowPulseCountPreInfusion = 0;
 		lastFlowPulseCount = 0;
@@ -465,15 +475,39 @@ void loop(void)
 		profileIndex = pullTimer / 500; // index advances in 500mSec steps
 
 		// Measure current pressure in boiler and flow rate 
-		float currentPressure = measurePressure(); // We need the current pressure for the PID loop and stored for rolling average; and displayed
-	    if (g_currentFlowPulseMillis > lastFlowPulseMillis) // If there is a new flow meter pulse send the timing for flow rate calculation
+		double currentPressure = measurePressure(); // We need the current pressure for the PID loop and stored for rolling average; and displayed
+
+		// flow measurement processing
+		// start by capturing the two volatile variables before they change on us mid procession
+		unsigned long capturedFlowPulseCount = g_flowPulseCount; // avoid races and timing errors - capture it all now
+		long capturedFlowPulseMillis = g_flowPulseMillis;
+#ifdef GICAR_FLOWMETER
+	    //Gicar flowmeters have very low pulse rates. To enhance resolution we will calculate the reciprocal of the time between pulses (1/T).
+		if (captureFlowPulseMillis > lastFlowPulseMillis) // If there is a new flow meter pulse send the timing for flow rate calculation
 		{	
 			if (preInfusion) 
-				g_flowPulseCountPreInfusion = g_flowPulseCount; //
-			g_averageF.push(g_currentFlowPulseMillis - lastFlowPulseMillis);
-			lastFlowPulseMillis = g_currentFlowPulseMillis;
+				g_flowPulseCountPreInfusion = capturedFlowPulseCount; //
+			g_averageF.push(capturedFlowPulseMillis - lastFlowPulseMillis);
+			lastFlowPulseMillis = capturedFlowPulseMillis;
 		}
-
+#endif
+#ifdef DIGMESA_FLOWMETER
+		//Digmesa Flowmeters have 20x the pulse rates of Gicar flowmeters. We will count the number of pulses per each 500mSec cycle.
+		if(capturedFlowPulseCount > lastFlowPulseCount)
+		{
+			if (preInfusion)
+				g_flowPulseCountPreInfusion = capturedFlowPulseCount; 
+			g_averageF.push((capturedFlowPulseMillis - lastFlowPulseMillis)
+				/(capturedFlowPulseCount - lastFlowPulseCount)); //calculate number of millisec per pulse
+			lastFlowPulseCount = capturedFlowPulseCount;
+			lastFlowPulseMillis = capturedFlowPulseMillis;
+		}
+		// how to detect and what to do with a stalled flow? 
+		// else - perhaps artificially exponent the flow down?  
+		// g_averageF.push(1.01 * g_averageF.mean()); // if there are no pulses received we have to allow the display to show the exponential drop in flowrate (even if "fictional".)
+		
+#endif
+		
 // Weight the shot using Bluetooth
 #ifdef ACAIA_LUNAR_INTEGRATION		
 		updateWeight();
@@ -487,7 +521,8 @@ void loop(void)
 			sumFlowProfile += g_flowProfile[profileIndex] >> 1;
 
 		// For Union mode, figure out if we need to switch from flow to pressure. Also avoid spurious switches...
-		if (g_pullMode == AUTO_UNION_PROFILE_PULL && preInfusion && (currentPressure > unionThreshold) && (profileIndex > 10))
+		if (g_pullMode == AUTO_UNION_PROFILE_PULL && preInfusion && 
+			(currentPressure > unionThreshold) && (profileIndex > 10))
 		{
 			preInfusion = false;
 			unionSkew = profileIndex - unionSkew; //Calculate skew once!
@@ -507,7 +542,7 @@ void loop(void)
 			// Update dashboard and graph
 			dashboardUpdate(pumpPWM, profileIndex, g_averageP.mean(), lastFlowPulseCount, preInfusion);
 			
-// Megunolink graphing
+// Megunolink telemetry graphing
 #ifdef MEGUNOLINK
 			megunolinkPlot.SendFloatData("Bar", g_averageP.mean(), 1);
 			megunolinkPlot.SendData("PWM", pumpPWM);
