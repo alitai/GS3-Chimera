@@ -5,7 +5,7 @@
 unsigned setPumpPWMbyMode(unsigned profileIndex, unsigned long pullTimer, unsigned pumpPWM, float currentPressure, boolean preInfusion, unsigned sumFlowProfile)
 {
 	unsigned currentPotValue = analogRead(CONTROL_POT);
-	unsigned PIDSetValue;
+	double PIDSetValue;
 	switch(g_pullMode)
 	{
 		case MANUAL_PULL:	
@@ -27,11 +27,15 @@ unsigned setPumpPWMbyMode(unsigned profileIndex, unsigned long pullTimer, unsign
 			break;
 
 		case AUTO_PRESSURE_PROFILE_PULL:
-			pumpPWM = executePID_P(true, 0, profileIndex, pumpPWM, currentPressure, pullTimer);
+			PIDSetValue = (double)g_pressureProfile[profileIndex] * 12.0 / 100.0 + (double)(g_pressureProfile[profileIndex + 1] -
+				g_pressureProfile[profileIndex]) * 12.0 / 100.0 * ((double)(pullTimer % 500) /500.0) ; 
+			pumpPWM = executePID_P(PIDSetValue, pumpPWM, currentPressure);
 			break;
 
 		case AUTO_FLOW_PROFILE_PULL:
-			pumpPWM = executePID_F(true, currentPotValue, profileIndex, pumpPWM, sumFlowProfile, pullTimer, preInfusion);
+			PIDSetValue = (double)sumFlowProfile + (double)(g_flowProfile[profileIndex + 1] >> 1 -
+				g_flowProfile[profileIndex] >> 1) * ((double)(pullTimer % 500) /500.0) ;
+			pumpPWM = executePID_F(PIDSetValue, pumpPWM, (double)g_flowPulseCount);
 			break;
 
 		case SLAYER_LIKE_PULL:
@@ -39,8 +43,8 @@ unsigned setPumpPWMbyMode(unsigned profileIndex, unsigned long pullTimer, unsign
 			break;	
 
 		case SLAYER_LIKE_PI_PRESSURE_PROFILE:	
-			PIDSetValue = currentPotValue / 90;    // 0-~11Bar
-			pumpPWM = executePID_P(false, PIDSetValue, profileIndex, pumpPWM, currentPressure, pullTimer); // calculate always but
+			PIDSetValue = (double)currentPotValue / 90.0;    // 0-~11Bar
+			pumpPWM = executePID_P(PIDSetValue, pumpPWM, currentPressure); // calculate always but
 			if (pullTimer < 1000 || currentPressure < unionThreshold)                                                                         // override during PI
 				pumpPWM = slayerMainPWM;
 			break;
@@ -50,13 +54,14 @@ unsigned setPumpPWMbyMode(unsigned profileIndex, unsigned long pullTimer, unsign
 			if (preInfusion)
 			{
 				PIDSetValue = constrain(map(currentPotValue, 100, 520, PID_MIN_FLOW, PID_MAX_FLOW), PID_MIN_FLOW, PID_MAX_FLOW);
-				//pumpPWM = executePID_F(false, PIDSetValue, profileIndex, pumpPWM, sumFlowProfile, pullTimer, preInfusion); // Closed loop PID based
+				//pumpPWM = executePID_F(PIDSetValue, pumpPWM, flowRate(preInfusion); // Closed loop PID based
 				pumpPWM = constrain(map(currentPotValue, 100, 520, 0, 220), 0, 220); // Open loop control 
 			}
 			else
 			{
-				PIDSetValue = constrain(map(currentPotValue, 520, 930, PID_MIN_PRESSURE, PID_MAX_PRESSURE), PID_MIN_PRESSURE, PID_MAX_PRESSURE);
-				pumpPWM = executePID_P(false, PIDSetValue, profileIndex, pumpPWM, currentPressure, pullTimer);
+				PIDSetValue = (double)currentPotValue / 90.0;
+				//PIDSetValue = constrain(map(currentPotValue, 520, 930, PID_MIN_PRESSURE, PID_MAX_PRESSURE), PID_MIN_PRESSURE, PID_MAX_PRESSURE);
+				pumpPWM = executePID_P(PIDSetValue, pumpPWM, currentPressure);
 			}
 			break;
 	}
