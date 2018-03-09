@@ -6,14 +6,17 @@ byte shutdownIfPullOver(byte countOffCycles, int lastProfileIndex)
 		countOffCycles--;
 	
 	if (countOffCycles < 1 || lastProfileIndex > 199 || Serial2.available())
+	{	
+		Serial.println("Shutting down pull...");
 		resetSystem();	
+	}
 	
 	return countOffCycles;
 }
 
 void resetSystem()
 {
-	Serial.println("Resetting system after pull or flush");
+	Serial.println("Resetting hardware and interrupts");
 	md.setM1Speed(0); //Shut down pump motor 
 	stopPID(); //Shut down PID loops
 	setFLB(false);
@@ -29,5 +32,6 @@ void resetSystem()
 	//EIFR = 2; // For Arduino Uno 
 	EIFR = _BV (INTF5); // Clear outstanding interrupts 	
     attachInterrupt(digitalPinToInterrupt(GROUP_SOLENOID), pullEspresso, FALLING);
+	Serial.println("Chimera is now ready for a new pull. To enter parameter editor type E.");
 }	
 

@@ -72,7 +72,7 @@ void readProfilesfromEEPROM()
 // Retrieve software parameters from EEPROM
 void readSWParametersfromEEPROM()
 {
-	Serial.println("Retrieving EEPROM Paramaters");
+	Serial.println("Retrieving system parameters from EEPROM");
 	EEPROM.get(0, FLBThresholdPWM);
 	debounceCount = EEPROM.read(2);
 	EEPROM.get(3, pumpMinPWM);
@@ -85,12 +85,15 @@ void readSWParametersfromEEPROM()
 	EEPROM.get(28, Kfp);
 	EEPROM.get(32, Kfi);
 	EEPROM.get(36, Kfd);
+	slayerPIFlowRate = EEPROM.read(40);
+	EEPROM.get(41, slayerMainPWM);
+	slayerPIPeriod = EEPROM.read(43);
 } 
 
 // Update software parameters in EEPROM
 void writeSWParameterstoEEPROM()
 {
-	Serial.println("Saving EEPROM Paramaters");
+	Serial.println("Saving system parameters to EEPROM");
 	EEPROM.put(0, FLBThresholdPWM);
 	EEPROM.update(2, debounceCount);
 	EEPROM.put(3, pumpMinPWM);
@@ -103,21 +106,15 @@ void writeSWParameterstoEEPROM()
 	EEPROM.put(28, Kfp);
 	EEPROM.put(32, Kfi);
 	EEPROM.put(36, Kfd);
-} 
-
-// Update Slayer parameters to EEPROM
-
-void readSlayerParametersfromEEPROM()
-{
-	Serial.println("Retrieving Slayer Paramaters from EEPROM");
-	slayerPIFlowRate = EEPROM.read(40);
-	EEPROM.get(41, slayerMainPWM);
-	slayerPIPeriod = EEPROM.read(43);
+	EEPROM.update(40, slayerPIFlowRate);
+	EEPROM.put(41, slayerMainPWM);
+	EEPROM.update(43, slayerPIPeriod);
+	EEPROM.put(44, slayerMaxPWM);
 } 
 
 void writeSlayerParameterstoEEPROM()
 {
-	Serial.println("Writing Slayer Paramaters to EEPROM");
+	Serial.println("Writing Slayer-like mode parameters to EEPROM");
 	EEPROM.update(40, slayerPIFlowRate);
 	EEPROM.put(41, slayerMainPWM);
 	EEPROM.update(43, slayerPIPeriod);

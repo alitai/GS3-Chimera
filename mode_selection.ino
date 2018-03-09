@@ -4,7 +4,7 @@
 // Can force a selection by passing a keySelected during function call; 0 for polling the touch screen
 // Display selected g_pullMode and Menus (truth table)
 //    softKey2 Condition                  softKey3  Condition
-//  0 Manual  (g_pullMode == MANUAL_PULL)         Auto UP   (g_pullMode == AUTO_UNION_PROFILE_PULL)
+//  0 Manual  (g_pullMode == MANUAL_PULL)         Auto UP   (g_pullMode == FLOW_PRESSURE_PROFILE)
 //  1 Auto PWM(g_pullMode == AUTO_PWM_PROFILE_PULL)     Auto PP   (g_pullMode == AUTO_PRESSURE_PROFILE_PULL)
 //  2 Auto FP (g_pullMode == AUTO_FLOW_PROFILE_PULL)    
 // 	3 Slayer (g_pullMode == SLAYER_LIKE_PULL) 			Modify/Next/Commit
@@ -46,8 +46,8 @@ void pullModeSwitching(byte softKey)
 			if (softKey == 2)
 				g_pullMode = MANUAL_PULL;
 			else if  (softKey == 3)
-				g_pullMode = AUTO_UNION_PROFILE_PULL;
-			menuDrawSoftKeys("Manual", (g_pullMode == MANUAL_PULL), "Auto-UP", (g_pullMode == AUTO_UNION_PROFILE_PULL));
+				g_pullMode = FLOW_PRESSURE_PROFILE;
+			menuDrawSoftKeys("Manual", (g_pullMode == MANUAL_PULL), "Auto-UP", (g_pullMode == FLOW_PRESSURE_PROFILE));
 			break;
 
 		case 1:

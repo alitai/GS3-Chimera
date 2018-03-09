@@ -23,7 +23,6 @@ void selectandDrawProfilebyMode()
 		case AUTO_PRESSURE_PROFILE_PULL: 
 		case AUTO_FLOW_PROFILE_PULL:	
 		case AUTO_PWM_PROFILE_PULL:
-		case AUTO_UNION_PROFILE_PULL:
 		case SLAYER_LIKE_PI_PRESSURE_PROFILE:
 		case FLOW_PRESSURE_PROFILE:
 			graphDrawCurrentProfiles();

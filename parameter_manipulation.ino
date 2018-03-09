@@ -67,7 +67,7 @@ void editParametersOverSerial()
 
 		if (command == 'X')
 		{
-			Serial.println("Chimera is now enabled. To enter parameter editor enter E.");
+			Serial.println("Chimera is now ready for a new pull. To enter parameter editor type E.");
 			edit = false;
 			return;
 		}

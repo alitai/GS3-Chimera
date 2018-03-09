@@ -38,12 +38,6 @@ void selectPIDbyMode()
 			startPressurePID();
 			startFlowPID();
 			break;
-		case AUTO_UNION_PROFILE_PULL:
-			//Need to define two PID loops
-			Serial.println("AUTO_UNION_PROFILE_PULL");
-			startPressurePID();
-			startFlowPID();
-			break;
 	}
 }
 

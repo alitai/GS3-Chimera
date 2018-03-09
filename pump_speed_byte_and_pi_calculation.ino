@@ -2,7 +2,7 @@
 // Calculate and return pump speed per pull mode
 //***********************************************************************************
 
-unsigned setPumpPWMbyMode(unsigned profileIndex, unsigned long pullTimer, unsigned pumpPWM, float currentPressure, boolean preInfusion, unsigned sumFlowProfile, unsigned unionSkew)
+unsigned setPumpPWMbyMode(unsigned profileIndex, unsigned long pullTimer, unsigned pumpPWM, float currentPressure, boolean preInfusion, unsigned sumFlowProfile)
 {
 	unsigned currentPotValue = analogRead(CONTROL_POT);
 	unsigned PIDSetValue;
@@ -50,22 +50,14 @@ unsigned setPumpPWMbyMode(unsigned profileIndex, unsigned long pullTimer, unsign
 			if (preInfusion)
 			{
 				PIDSetValue = constrain(map(currentPotValue, 100, 520, PID_MIN_FLOW, PID_MAX_FLOW), PID_MIN_FLOW, PID_MAX_FLOW);
-				pumpPWM = executePID_F(false, PIDSetValue, profileIndex, pumpPWM, sumFlowProfile, pullTimer, preInfusion);
-				pumpPWM = constrain(map(currentPotValue, 100, 520, 0, 220), 0, 220);
+				//pumpPWM = executePID_F(false, PIDSetValue, profileIndex, pumpPWM, sumFlowProfile, pullTimer, preInfusion); // Closed loop PID based
+				pumpPWM = constrain(map(currentPotValue, 100, 520, 0, 220), 0, 220); // Open loop control 
 			}
 			else
 			{
 				PIDSetValue = constrain(map(currentPotValue, 520, 930, PID_MIN_PRESSURE, PID_MAX_PRESSURE), PID_MIN_PRESSURE, PID_MAX_PRESSURE);
 				pumpPWM = executePID_P(false, PIDSetValue, profileIndex, pumpPWM, currentPressure, pullTimer);
 			}
-			break;
-
-		case AUTO_UNION_PROFILE_PULL:
-			//Need to define two setpoints and two Inputs
-			if (preInfusion) //if union is in preInfusion mode, it is running Flow Profiling
-				pumpPWM = executePID_F(true, currentPotValue, profileIndex, pumpPWM, sumFlowProfile, pullTimer, preInfusion);
-			else
-				pumpPWM = executePID_P(true, 0, profileIndex - unionSkew, pumpPWM, currentPressure, pullTimer);
 			break;
 	}
 	// Action Time - operate pump & operate FLB solenoid

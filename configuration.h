@@ -6,11 +6,10 @@
 #define AUTO_PWM_PROFILE_PULL 1					// Not recommended
 #define AUTO_PRESSURE_PROFILE_PULL 2			// Not recommended
 #define AUTO_FLOW_PROFILE_PULL 3				// Not recommended
-#define AUTO_UNION_PROFILE_PULL 4            	// Union Profile does FP and switches to PP
-#define SLAYER_LIKE_PULL 5						// Single speed pump - low-flow PI by FLB-OFF for set time followed by FLB ON 
-#define LEVER_LIKE_PULL 6						// Not currently implemented
-#define SLAYER_LIKE_PI_PRESSURE_PROFILE 7   	// Low flow PI (FLB OFF) until pressure reaches 4 bar aand then manual pressure profiling
-#define FLOW_PRESSURE_PROFILE 8					// FP: PID Flow (left side of paddle) up to unionThreshold. Then PP PID Pressure (right side of paddle)
+#define SLAYER_LIKE_PULL 4						// Single speed pump - low-flow PI by FLB-OFF for set time followed by FLB ON 
+#define LEVER_LIKE_PULL 5						// Not currently implemented
+#define SLAYER_LIKE_PI_PRESSURE_PROFILE 6   	// Low flow PI (FLB OFF) until pressure reaches 4 bar aand then manual pressure profiling
+#define FLOW_PRESSURE_PROFILE 7					// FP: PID Flow (left side of paddle) up to unionThreshold. Then PP PID Pressure (right side of paddle)
 #define FLUSH 10
 
 // For debugging, this sends the entire EEPROM content to the serial monitor

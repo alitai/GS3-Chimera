@@ -1,4 +1,4 @@
-#define CURRENT_VERSION "V0.41"
+#define CURRENT_VERSION "V0.42"
 
 #include "VNH5019MotorShieldMega.h"
 #include "configuration.h"
@@ -26,13 +26,11 @@
 TimePlot megunolinkPlot;
 #endif
 
-
 #ifdef TFT_TOUCH
 #include <TFT_Touch.h>
 /* Create an instance of the touch screen library */
 TFT_Touch ts = TFT_Touch(DCS, DCLK, DIN, DOUT);
 #endif
-
 
 #ifdef TS_STMPE
 Adafruit_STMPE610 ts = Adafruit_STMPE610(TS_CS);
@@ -147,11 +145,10 @@ unsigned long g_lastMillis = 0;
 unsigned char g_pullMode; 
 int g_currentMenu, g_selectedParameter = 0, g_lastParameterPotValue;
 boolean g_modeSwitchIncomplete = false; 
-boolean g_flushCycle = true; //flush cycled DO NOT imply a Serial port signal. Hence it is default!
-volatile boolean g_activePull = false, g_newPull = false; // Used by interrupts
-volatile unsigned long g_flowPulseMillis, g_flowPulseCount, g_flowPulseCountPreInfusion, g_lastFlowPulseCount; // Used by interrupts
-#define UNION_PRESSURE 30
-
+boolean g_flushCycle = true, g_activePull; //flush cycled DO NOT imply a Serial port signal. Hence it is default!
+volatile boolean g_newPull; // Used by interrupts
+volatile unsigned long g_flowPulseMillis, g_flowPulseCount;  // Used by interrupts
+unsigned long g_flowPulseCountPreInfusion, g_lastFlowPulseCount;
 double sleepTimer;
 
 // Settings for Acaia Scale
@@ -167,7 +164,6 @@ unsigned char scaleBattery;
 float currentDose;
 float lastCurrentDose;
 boolean scaleConnected = false;
-
 unsigned long scaleReconnectionTimer;
 unsigned long scaleIdleTimer; 
 #endif
@@ -200,10 +196,7 @@ void pullEspresso()  // Checks if group solenoid is powered up and if so trigger
 void flowPulseReceived(boolean preInfusion) // receives flow pulses from the Gicar flow sensor
 {
 	g_flowPulseCount++;
-//#ifdef GICAR_FLOWMETER
 	g_flowPulseMillis = millis();
-//#endif	
-
 }
 
 //********************************************************************
@@ -212,6 +205,15 @@ void flowPulseReceived(boolean preInfusion) // receives flow pulses from the Gic
 
 void setup() 
 {
+	// Initialize hardware
+	md.init(); // Initialize VNH5019 pump driver
+	tft.begin(); // Initialize displays
+	tft.setRotation(2);
+	
+	Serial.begin(115200);
+	Serial.println(" ");
+	Serial.println("Chimera is starting....");
+
 	pinMode(GROUP_SOLENOID, INPUT_PULLUP);
 	pinMode(FLOW_COUNT_INPUT, INPUT_PULLUP);
 	pinMode(GREEN_LED, OUTPUT);
@@ -225,14 +227,6 @@ void setup()
 	Serial2.begin(1200, SERIAL_8E2);	// opens serial port for Gicar 3d5, sets data rate to 1200 bps, 8 bits even parity, 2 stop bits
 
 	initFlowLimitBypass();
-	//resetSystem(); // reset hardware states and interrupts
-
-	// Initialize hardware
-	md.init(); // Initialize VNH5019 pump driver
-	tft.begin(); // Initialize displays
-	tft.setRotation(2);
-	
-	Serial.begin(115200);
 
 // Initialize touch screens
 #ifdef TS_STMPE	
@@ -246,15 +240,11 @@ void setup()
 
 #ifdef OVERWRITE_EEPROM_WITH_DEFAULTS
 	// initialize EEPROM (if Arduino is new) 
-	Serial.println("Writing parameters to EEPROM...");
 	writeSWParameterstoEEPROM();
-	writeSlayerParameterstoEEPROM();
 #else 
 	//Read parameters and saved profiles from EEPROM. Initialize EEPROM if new...
-	Serial.println("Reading EEPROM Parameters...");
 	readSWParametersfromEEPROM();
 	readProfilesfromEEPROM();
-	readSlayerParametersfromEEPROM();
 #endif
 	
 	// Create default dashboard, graph and menus 
@@ -291,8 +281,6 @@ void setup()
 	Serial.println("EL-MQTT ready");
 #endif
 
-	Serial.println("Chimera is now enabled. To enter parameter editor enter E.");
-	
 	//Megunolink 
 #ifdef MEGUNOLINK
 	megunolinkPlot.SetTitle("GS/3 Pull Telemetry");
@@ -300,7 +288,8 @@ void setup()
 	megunolinkPlot.SetYlabel("Value");
 	//megunolinkPlot.SetSeriesProperties("ADCValue", Plot::Magenta, Plot::Solid, 2, Plot::Square);
 #endif
-	
+
+	resetSystem(); // reset hardware states and interrupts
 }
 
 //********************************************************************
@@ -315,12 +304,12 @@ void loop(void)
 	unsigned long pullStartTime, pullTimer, lastFlowPulseMillis;
 	unsigned pumpPWM;
 	unsigned sumFlowProfile;
-	unsigned unionSkew; // alignment delta between pressure profile and union threshold point
 	boolean preInfusion = false;
 
 #ifdef ACAIA_LUNAR_INTEGRATION		
 	while(currentDose != DEFAULT_DOSE_FOR_EBF && scaleWeight > 10 && scaleConnected /*&& !ts.touched()*/ && ts.Pressed()) //Pause next pull until demitasse removed 
 		{
+			Serial.println("B");
 			updateWeight();
 			measurePressure();
 			displayPressureandWeight();
@@ -340,12 +329,9 @@ void loop(void)
 //****************************************************************************
 // Idle - Wait for Serial trigger or Group Solenoid interrupt... 
 //***************************************************************************
-/*	if (!g_newPull && !g_activePull)
-		Serial.println("Entering Idle Mode");*/
 	while (!g_newPull && !g_activePull)
 	{
 		serialControl();
-			
 		char editNow=Serial.read();
 		if (editNow == 'E' || editNow == 'e') 
 			editParametersOverSerial(); //ruins the display at this point...
@@ -381,15 +367,15 @@ void loop(void)
 #ifdef MQTT		
 		esp.Process();
 #endif
+
 	}
 
 //****************************************************************************
 // Flush or clean group
 //***************************************************************************	
 	if (g_newPull && g_flushCycle && !g_activePull)
-		Serial.println("Entering Flush Cycle");
-	if (g_newPull && g_flushCycle && !g_activePull)
 	{
+		Serial.println("Flushing group....");
 		flushCycle();
 	}
 
@@ -442,23 +428,8 @@ void loop(void)
 		selectandDrawProfilebyMode();
 
 		//if (!g_cleanCycle)
-		preInfusion = true; // start in preinfusion mode (in Union mode start with flow profiling preinfusion mode)
-
-		// Odds and ends for union mode... 
-		// Calculate the profileIndex in which the profile exceeds the unionThreshold setting
-		if (g_pullMode == AUTO_UNION_PROFILE_PULL)
-			for (int i = 0; i < 200; i++) // find the profileIndex where the pressure setting exceeds the unionThreshold - it will be used to calculate the time skew
-			{
-				if (g_pressureProfile[i+2] > g_pressureProfile [i+1] 
-					&& g_pressureProfile[i+1] > g_pressureProfile [i] 
-					&& g_pressureProfile [i] > UNION_PRESSURE) // Verify it is in a rising pressure curve 
-					// && g_pressureProfile [i] > unionThreshold)
-					// Assaf: problem: unionthreshold is in PWM so irrelevant for comparison with pressure profile.
-				{
-					unionSkew = i ;
-					break;
-				}
-			} 
+		preInfusion = true; // start in preinfusion mode
+	
 		ledColor('g');
 		lastFlowPulseMillis = millis();
 		g_activePull = true; // Time to rock & roll
@@ -467,7 +438,6 @@ void loop(void)
 //****************************************************************************
 // Pull an Espresso - Percolation
 //***************************************************************************
-
 	while (g_activePull)
 	{
 		// Time the pull and calculate the profile index (there are two profile points per second)
@@ -520,16 +490,8 @@ void loop(void)
 		if (profileIndex != lastProfileIndex)
 			sumFlowProfile += g_flowProfile[profileIndex] >> 1;
 
-		// For Union mode, figure out if we need to switch from flow to pressure. Also avoid spurious switches...
-		if (g_pullMode == AUTO_UNION_PROFILE_PULL && preInfusion && 
-			(currentPressure > unionThreshold) && (profileIndex > 10))
-		{
-			preInfusion = false;
-			unionSkew = profileIndex - unionSkew; //Calculate skew once!
-		}	
-
 		// calculate pump speed & preinfusion for all pull modes...
-		pumpPWM = setPumpPWMbyMode(profileIndex, pullTimer, pumpPWM, currentPressure, preInfusion, sumFlowProfile, unionSkew);
+		pumpPWM = setPumpPWMbyMode(profileIndex, pullTimer, pumpPWM, currentPressure, preInfusion, sumFlowProfile);
 		preInfusion = setFlowLimitBypass(pumpPWM, profileIndex, preInfusion, currentPressure); // check preinfusion status & set flow limit bypass solenoid and Slayer style preInfusion
 		//stopIfFault(); // What to do with this??? Make an error display???
 
