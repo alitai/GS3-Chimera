@@ -31,8 +31,6 @@ void pullModeSwitching(byte softKey)
 	if (g_selectedParameter != 0)    
 		if (g_currentMenu == 3 )
 			menuSetupSlayerParameters();
-		//else if (g_currentMenu == 6)
-		//	menuSetupSystemParameters();
 		else g_selectedParameter = 0;
 		
 	if(softKey == 99)    //return code of "99" means no valid input - quit
@@ -121,54 +119,6 @@ void pullModeSwitching(byte softKey)
 			else
 				menuDrawSoftKeys("Load", false, "Save", false);
 			break;
-
-		case 5:
-			if (softKey == 1) // Clear setupParameter editing display and go back to standard operation mode.....
-			{
-				tft.fillRect(0, 0, 240, 140, bg_Color);
-				dashboardSetup();
-			}
-			if (softKey == 2)
-			{
-				//g_debugDisplay = false;
-				//dashboardSetup();
-			}
-			else if (softKey == 3)
-			{
-				//g_debugDisplay = true;
-				//tft.fillRect(0, 0, 240, 140, bg_Color);
-			}
-			menuDrawSoftKeys("Normal", true, "Debug", false);
-			break;
-
-		case 6:
-			/*
-			if (softKey == 4) // Enter setupParameter mode...
-			{
-				//tft.fillRect(0, 0, 240, 140, bg_Color);
-				//g_selectedParameter = 0;
-				//menuSetupSystemParameters();
-			}
-			else if (softKey == 2)
-			{
-				if (g_selectedParameter > 11)
-					g_selectedParameter = 0;
-				g_selectedParameter++;
-				g_lastParameterPotValue = analogRead(CONTROL_POT);
-				//menuSetupSystemParameters();
-				menuDrawSoftKeys("Next", false, "Commit",false);
-			}
-			else if (softKey == 3)
-			{
-				writeSWParameterstoEEPROM();
-				g_selectedParameter = 0;
-			//	menuSetupSystemParameters();
-				menuDrawSoftKeys("Select", false, "Saved",true);
-			}
-			//else
-				menuDrawSoftKeys("Select", false, "Commit",false);
-			*/
-			break;
 	}
 	g_modeSwitchIncomplete = false;
 }
@@ -217,13 +167,6 @@ void gotoSleep()
 	connectScale();	
 #endif
 	initializeDisplay();
-	//tft.setRotation(2);
-	//tft.fillScreen(bg_Color);
-	//dashboardSetup();
-	//graphDrawCurrentProfiles();	
-	
-	//g_currentMenu = 0; 
-	//pullModeSwitching(0); // Setup menu system & switch mode to manual profil
 }
 
 double sleepTimerReset()

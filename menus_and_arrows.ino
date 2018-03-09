@@ -8,11 +8,11 @@ byte menuNavigation()
 	byte softKey = touchpadSenseKey();
 
 	//If Nav arrows (softKey 1 & 4) are pressed or forced - change menu
-	if ((softKey == 1 && g_currentMenu == 0) || (softKey == 4 && g_currentMenu ==5)) //throw out of bound clicks out...
+	if ((softKey == 1 && g_currentMenu == 0) || (softKey == 4 && g_currentMenu ==4)) //throw out of bound clicks out...
 		return 99; 
 	if (softKey == 1 && g_currentMenu > 0)
 		g_currentMenu--;
-	if (softKey == 4 && g_currentMenu < 5)
+	if (softKey == 4 && g_currentMenu < 4)
 		g_currentMenu++;
 		
 	return softKey;

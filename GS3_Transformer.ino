@@ -251,6 +251,7 @@ void setup()
 	initializeDisplay();
 #ifdef EEPROM_SERIAL_DOWNLOAD
 	readEEPROMtoSerial();
+	readProfilestoSerial()
 #endif
 
 #ifdef ACAIA_LUNAR_INTEGRATION
@@ -447,9 +448,8 @@ void loop(void)
 		// Measure current pressure in boiler and flow rate 
 		double currentPressure = measurePressure(); // We need the current pressure for the PID loop and stored for rolling average; and displayed
 
-		// flow measurement processing
-		// start by capturing the two volatile variables before they change on us mid procession
-		unsigned long capturedFlowPulseCount = g_flowPulseCount; // avoid races and timing errors - capture it all now
+		// flow measurement processing - capture two volatile variables before they change 
+		unsigned long capturedFlowPulseCount = g_flowPulseCount; 
 		long capturedFlowPulseMillis = g_flowPulseMillis;
 #ifdef GICAR_FLOWMETER
 	    //Gicar flowmeters have very low pulse rates. To enhance resolution we will calculate the reciprocal of the time between pulses (1/T).
@@ -485,7 +485,6 @@ void loop(void)
 
 		displayPressureandWeight();
 
-		//Odds & ends for PID loops
 		//Flow PID's target is the accumulated number of pulses. However, in profile we store pulses per 500mSec. So we accumulate.
 		if (profileIndex != lastProfileIndex)
 			sumFlowProfile += g_flowProfile[profileIndex] >> 1;
@@ -504,7 +503,7 @@ void loop(void)
 			// Update dashboard and graph
 			dashboardUpdate(pumpPWM, profileIndex, g_averageP.mean(), lastFlowPulseCount, preInfusion);
 			
-// Megunolink telemetry graphing
+			// Telemetry graphing
 #ifdef MEGUNOLINK
 			megunolinkPlot.SendFloatData("Bar", g_averageP.mean(), 1);
 			megunolinkPlot.SendData("PWM", pumpPWM);
@@ -512,7 +511,6 @@ void loop(void)
 			megunolinkPlot.SendFloatData("ml/min", flowRate(preInfusion), 1);
 			megunolinkPlot.SendFloatData("gr", scaleWeight, 1);
 #endif 
-			
 
 #ifdef MQTT
 //			mqtt.publish("/gs3/pressure", g_averageP.mean());
