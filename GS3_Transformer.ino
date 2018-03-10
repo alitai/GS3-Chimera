@@ -27,7 +27,7 @@ TimePlot megunolinkPlot;
 #endif
 
 #ifdef TFT_TOUCH
-#include <TFT_Touch.h>
+#include "TFT_Touch.h"
 /* Create an instance of the touch screen library */
 TFT_Touch ts = TFT_Touch(DCS, DCLK, DIN, DOUT);
 #endif
@@ -66,9 +66,9 @@ Average<unsigned long> g_averageF(10); // Pulse rate is 20x higher which can als
 #endif
 
 #ifdef MQTT
-#include <ELClient.h>
-#include <ELClientCmd.h>
-#include <ELClientMqtt.h>
+#include "ELClient.h"
+#include "ELClientCmd.h"
+#include "ELClientMqtt.h"
 
 // Initialize a connection to esp-link using the normal hardware serial port both for
 // SLIP and for debug messages.
@@ -251,7 +251,7 @@ void setup()
 	initializeDisplay();
 #ifdef EEPROM_SERIAL_DOWNLOAD
 	readEEPROMtoSerial();
-	readProfilestoSerial()
+	readProfilestoSerial();
 #endif
 
 #ifdef ACAIA_LUNAR_INTEGRATION

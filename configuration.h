@@ -12,8 +12,15 @@
 #define FLOW_PRESSURE_PROFILE 7					// FP: PID Flow (left side of paddle) up to unionThreshold. Then PP PID Pressure (right side of paddle)
 #define FLUSH 10
 
+// 3d5 buttons - choose the code above to change the pull modes
+#define BUTTON_1 4                               // Leftmost button (single shot)
+#define BUTTON_2 6								 // Second button (double shot)
+#define BUTTON_3 7								 // Third button (single mug)
+#define BUTTON_4 0								 // 4th button (double mug)
+
+
 // For debugging, this sends the entire EEPROM content to the serial monitor
-//#define EEPROM_SERIAL_DOWNLOAD
+#define EEPROM_SERIAL_DOWNLOAD
 
 // Define MQTT channel
 //#define MQTT
@@ -221,12 +228,12 @@ double unionThreshold = 4.0d; // in bar - at this point the system will switch f
 //************************************************************************
 // PID parameters
 //************************************************************************
-const unsigned PIDSampleTime = 100; // in mSec
+const unsigned PIDSampleTime = 25; // in mSec
 
 // Pressure PID loop (pressure profiling)
 double Kpp = 60, Kpi = 20, Kpd = 3; 
-#define PID_MIN_PRESSURE 4
-#define PID_MAX_PRESSURE 10
+#define PID_MIN_PRESSURE 4.0
+#define PID_MAX_PRESSURE 10.0
 #define PRESSURE_PID_MIN_PWM 0 
 #define PRESSURE_PID_MAX_PWM 220
 
@@ -234,8 +241,8 @@ double Kpp = 60, Kpi = 20, Kpd = 3;
 double Kfp = 5, Kfi = 5, Kfd = 1;
 #define PID_MIN_FLOW 0
 #define PID_MAX_FLOW 150  // maximum debit in ml/min while in PI
-#define FLOW_PID_MIN_PWM 0
-#define FLOW_PID_MAX_PWM 220
+#define FLOW_PID_MIN_PWM 10
+#define FLOW_PID_MAX_PWM 150
 
 //***********************************************************************
 // Pump Speeds (in PWM)
