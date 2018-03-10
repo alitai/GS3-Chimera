@@ -91,4 +91,10 @@
 		
 	v0.41
 		Added FLOW_PRESSURE_PROFILE mode - FP: PID Flow (left side of paddle) up to unionThreshold. Then PP PID Pressure (right side of paddle)
+		
+	v0.42
+		Bugfixes and refactoring
+
+	v0.43
+		Corrected a situation where pull would stall and the ml/min would remain stuck
 */

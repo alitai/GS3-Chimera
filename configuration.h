@@ -18,7 +18,6 @@
 #define BUTTON_3 7								 // Third button (single mug)
 #define BUTTON_4 0								 // 4th button (double mug)
 
-
 // For debugging, this sends the entire EEPROM content to the serial monitor
 #define EEPROM_SERIAL_DOWNLOAD
 
@@ -32,7 +31,7 @@
 // If the output relay inverts (like some modules do) uncomment the next line
 #define INVERT_FLB_OUTPUT
 
-// If using Otto                                    Controls HTWF-1A12A22A Hall Effect 0-5V paddle control instead of potentiometer (same connections)
+// If using Otto Controls HTWF-1A12A22A Hall Effect 0-5V paddle control instead of potentiometer (same connections)
 // Aligns center indent of paddle with FLB control and Preinfusion
 #define OTTO_HTWF
 
@@ -243,6 +242,7 @@ double Kfp = 5, Kfi = 5, Kfd = 1;
 #define PID_MAX_FLOW 150  // maximum debit in ml/min while in PI
 #define FLOW_PID_MIN_PWM 10
 #define FLOW_PID_MAX_PWM 150
+#define STALL_FLOW_RATE 20 //ml/min
 
 //***********************************************************************
 // Pump Speeds (in PWM)

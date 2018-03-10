@@ -1,4 +1,4 @@
-#define CURRENT_VERSION "V0.42"
+#define CURRENT_VERSION "V0.43"
 
 #include "VNH5019MotorShieldMega.h"
 #include "configuration.h"
@@ -306,6 +306,7 @@ void loop(void)
 	unsigned pumpPWM;
 	unsigned sumFlowProfile;
 	boolean preInfusion = false;
+	unsigned long stallTime = mlPerFlowMeterPulse * 60 * 1000 / STALL_FLOW_RATE; // 72mSec if 0.024ml/pulse & STALL_FLOW_RATE = 20ml/min 
 
 #ifdef ACAIA_LUNAR_INTEGRATION		
 	while(currentDose != DEFAULT_DOSE_FOR_EBF && scaleWeight > 10 && scaleConnected /*&& !ts.touched()*/ && ts.Pressed()) //Pause next pull until demitasse removed 
@@ -441,6 +442,7 @@ void loop(void)
 //***************************************************************************
 	while (g_activePull)
 	{
+		
 		// Time the pull and calculate the profile index (there are two profile points per second)
 		pullTimer = millis() - pullStartTime;
 		profileIndex = pullTimer / 500; // index advances in 500mSec steps
@@ -456,13 +458,17 @@ void loop(void)
 		if (capturedFlowPulseMillis > lastFlowPulseMillis) // If there is a new flow meter pulse send the timing for flow rate calculation
 		{	
 			if (preInfusion) 
-				g_flowPulseCountPreInfusion = capturedFlowPulseCount; //
+				g_flowPulseCountPreInfusion = capturedFlowPulseCount; 
 			g_averageF.push(capturedFlowPulseMillis - lastFlowPulseMillis);
 			lastFlowPulseMillis = capturedFlowPulseMillis;
 		}
+		else
+			if(millis() > g_flowPulseMillis + stallTime) // Stall crowbar - should the pull stall - insert escalating time into the Average to egg on the PID... 
+				g_averageF.push(millis() - g_flowPulseMillis);
 #endif
 #ifdef DIGMESA_FLOWMETER
 		//Digmesa Flowmeters have 20x the pulse rates of Gicar flowmeters. We will count the number of pulses per each 500mSec cycle.
+		
 		if(capturedFlowPulseCount > lastFlowPulseCount)
 		{
 			if (preInfusion)
@@ -472,6 +478,10 @@ void loop(void)
 			lastFlowPulseCount = capturedFlowPulseCount;
 			lastFlowPulseMillis = capturedFlowPulseMillis;
 		}
+		else
+			if(millis() > g_flowPulseMillis + stallTime) // Stall crowbar - should the pull stall - insert escalating time into the Average to egg on the PID... 
+				g_averageF.push(millis() - g_flowPulseMillis);
+		
 		// how to detect and what to do with a stalled flow? 
 		// else - perhaps artificially exponent the flow down?  
 		// g_averageF.push(1.01 * g_averageF.mean()); // if there are no pulses received we have to allow the display to show the exponential drop in flowrate (even if "fictional".)
