@@ -18,16 +18,7 @@ void manageScaleConnection()
 #endif	
 }
 
-	
-/*
-Autopower off
-else if(scaleActive && millis() > 10000 + scaleIdleTimer ) 
-{	
-	scale->disconnect();
-}
-*/
-
-//check if there is a Portafilter to do a custom dose.
+//check if there is a Portafilter (weight >> EMPTY_PORTAFILTER_WEIGHT) to do a custom dose.
 void updateDoseWeight()
 {	
 #ifdef ACAIA_LUNAR_INTEGRATION		
@@ -39,7 +30,6 @@ void updateDoseWeight()
 		float epsilon = 0.05;
 		while (previousWeight > EMPTY_PORTAFILTER_WEIGHT)
 		{
-			//scaleWeight = measureWeight(previousWeight);
 			if (updateWeight()) 
 			{
 				displayPressureandWeight();

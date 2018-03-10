@@ -16,14 +16,13 @@ unsigned setPumpPWMbyMode(unsigned profileIndex, unsigned long pullTimer, unsign
 			else
 				pumpPWM = constrain(map(currentPotValue, 520, 930, FLBThresholdPWM, pumpMaxPWM), FLBThresholdPWM, pumpMaxPWM);
 #else
-			pumpPWM = (unsigned)((float)currentPotValue * pumpMaxPWM / 1024); //converts int to byte for standard potentiometer control
+			pumpPWM = (unsigned)((float)currentPotValue * pumpMaxPWM / 1024); 
 #endif
 			break;
 
 		case AUTO_PWM_PROFILE_PULL:
-			pumpPWM = (unsigned) 400 / 255 * ((g_PWMProfile[profileIndex]+
-				(g_PWMProfile[profileIndex+1] - 
-				g_PWMProfile[profileIndex])*((double)(pullTimer % 500)/500.0)));
+			pumpPWM = (unsigned) 400 / 255 * ((g_PWMProfile[profileIndex]+ (g_PWMProfile[profileIndex+1] 
+						- g_PWMProfile[profileIndex])*((double)(pullTimer % 500)/500.0)));
 			break;
 
 		case AUTO_PRESSURE_PROFILE_PULL:
@@ -44,7 +43,7 @@ unsigned setPumpPWMbyMode(unsigned profileIndex, unsigned long pullTimer, unsign
 
 		case SLAYER_LIKE_PI_PRESSURE_PROFILE:	
 			PIDSetValue = (double)currentPotValue / 90.0;    // 0-~11Bar
-			pumpPWM = executePID_P(PIDSetValue, pumpPWM, currentPressure); // calculate always but
+			pumpPWM = executePID_P(PIDSetValue, pumpPWM, currentPressure); 
 			if (pullTimer < 1000 || currentPressure < unionThreshold)                                                                         // override during PI
 				pumpPWM = slayerMainPWM;
 			break;
@@ -54,13 +53,15 @@ unsigned setPumpPWMbyMode(unsigned profileIndex, unsigned long pullTimer, unsign
 			if (preInfusion)
 			{
 				PIDSetValue = constrain(map(currentPotValue, 100, 520, PID_MIN_FLOW, PID_MAX_FLOW), PID_MIN_FLOW, PID_MAX_FLOW);
-				//pumpPWM = executePID_F(PIDSetValue, pumpPWM, flowRate(preInfusion); // Closed loop PID based
-				pumpPWM = constrain(map(currentPotValue, 100, 520, 0, 220), 0, 220); // Open loop control 
+				pumpPWM = executePID_F(PIDSetValue, pumpPWM, flowRate(preInfusion)); // Closed loop PID based
+				//pumpPWM = constrain(map(currentPotValue, 100, 520, 0, 220), 0, 220); // Open loop control 
 			}
 			else
 			{
-				PIDSetValue = (double)currentPotValue / 90.0;
-				//PIDSetValue = constrain(map(currentPotValue, 520, 930, PID_MIN_PRESSURE, PID_MAX_PRESSURE), PID_MIN_PRESSURE, PID_MAX_PRESSURE);
+				if (currentPotValue > 520)
+					PIDSetValue = (double)(((currentPotValue - 520.0) / 410.0) * (PID_MAX_PRESSURE - PID_MIN_PRESSURE) + PID_MIN_PRESSURE); //4.0 - ~10bar: 
+				else 
+					PIDSetValue = PID_MIN_PRESSURE;
 				pumpPWM = executePID_P(PIDSetValue, pumpPWM, currentPressure);
 			}
 			break;

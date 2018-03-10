@@ -23,8 +23,6 @@ void selectandDrawProfilebyMode()
 		case AUTO_PRESSURE_PROFILE_PULL: 
 		case AUTO_FLOW_PROFILE_PULL:	
 		case AUTO_PWM_PROFILE_PULL:
-		case SLAYER_LIKE_PI_PRESSURE_PROFILE:
-		case FLOW_PRESSURE_PROFILE:
 			graphDrawCurrentProfiles();
 			break;
 			
@@ -32,12 +30,17 @@ void selectandDrawProfilebyMode()
 			graphDrawEmptyGraph(); // Clear existing graph and draw an empty one
 			graphDrawFLB(); //Draw line where FLB activates
 			//	clearProfiles();
-			graphDrawCurrentProfiles(); //test
+			//graphDrawCurrentProfiles(); //test
 			break;
 			
 		case SLAYER_LIKE_PULL:
 			graphDrawSlayerProfile();
 			break;
+			
+		case FLOW_PRESSURE_PROFILE:
+		case SLAYER_LIKE_PI_PRESSURE_PROFILE:
+			graphDrawEmptyGraph();
+			graphDrawUnionThreshold();
 	}
 }
 
@@ -140,6 +143,16 @@ void graphDrawFLB()
 	for (int i = 0; i < 70; i++)
 		tft.drawFastHLine(31 + i * 3, 260 - (FLBThresholdPWM / 4 * perPixel) , 2 , axis_minor_Color);
 }  
+
+void graphDrawUnionThreshold()
+{
+	float perPixel = 1.35; //135 pixels represent 100% signal (or 1.35 pixels / 1 percent) 
+	// draw union threshold dashed line
+	tft.fillRect(0, 177, 33, 80, bg_Color);
+	printSomething("UT", 10, 256-(unionThreshold * 10 * perPixel), text_dark_Color, NULL , false);
+	for (int i = 0; i < 70; i++)
+		tft.drawFastHLine(31 + i * 3, 260 - (unionThreshold * 10 * perPixel) , 2 , pressure_Color);
+} 
 
 void graphDrawEmptyGraph()
 {

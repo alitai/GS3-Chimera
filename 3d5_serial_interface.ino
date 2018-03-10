@@ -42,25 +42,25 @@ void serialControl()
 	switch(incomingByte)
 	{
 		case 0x11: 	// This is the 1 shot button
-			g_pullMode = SLAYER_LIKE_PULL;
+			g_pullMode = BUTTON_1;
 			g_currentMenu = 3;
 			g_flushCycle = false;
 			g_modeSwitchIncomplete = true;        // This variable ensures the mode is fully initialized even if the interrupt comes quickly! 
 			break;
 	    case 0x12:  // This is the 2 shot button
-			g_pullMode = SLAYER_LIKE_PI_PRESSURE_PROFILE;//AUTO_PRESSURE_PROFILE_PULL;
+			g_pullMode = BUTTON_2;
 			g_currentMenu = 1;
 			g_flushCycle = false;
 			g_modeSwitchIncomplete = true; 
 			break;
 		case 0x13: // This is the 1 mug button
-			g_pullMode = FLOW_PRESSURE_PROFILE;//AUTO_FLOW_PROFILE_PULL;
+			g_pullMode = BUTTON_3;
 			g_currentMenu = 2;
 			g_flushCycle = false;
 			g_modeSwitchIncomplete = true; 
 			break;
 		case 0x14: // This is the 2 mug button
-			g_pullMode = MANUAL_PULL;
+			g_pullMode = BUTTON_4;
 			g_currentMenu = 0;
 			g_flushCycle = false;
 			g_modeSwitchIncomplete = true; 
