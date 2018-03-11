@@ -356,14 +356,20 @@ void loop(void)
 		displayPressureandWeight();
 
 #ifdef SINGLE_PUMP		
-		 // Check if pump relay by 3D5 is switched on - if yes assume tank fill cycle
-		while (digitalRead(PUMP_RELAY) == LOW)
-		{
-			md.setM1Speed(constrain(flushPWM, pumpMinPWM, pumpMaxPWM));
+		// Check if pump relay by 3D5 is switched on - if yes assume tank fill cycle
+		if (digitalRead(PUMP_RELAY) == LOW)
+		{    
+		Serial.println("Fill tank");
+			 while (digitalRead(PUMP_RELAY) == LOW && !g_newPull)
+			 {
+				 md.setM1Speed(constrain(flushPWM, pumpMinPWM, pumpMaxPWM));
+			 }
+		  md.setM1Speed(0); //Shut down pump motor
+		  Serial.println("Fill tank stopped.");              
 		}
-		md.setM1Speed(0); //Shut down pump motor
 
 #endif
+
 #ifndef AUTO_SLEEP
 sleepTimerReset();
 #endif
