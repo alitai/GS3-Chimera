@@ -1,4 +1,4 @@
-#define CURRENT_VERSION "V0.43"
+#define CURRENT_VERSION "V0.44"
 
 #include "VNH5019MotorShieldMega.h"
 #include "configuration.h"
@@ -149,7 +149,7 @@ boolean g_flushCycle = true, g_activePull; //flush cycled DO NOT imply a Serial 
 volatile boolean g_newPull; // Used by interrupts
 volatile unsigned long g_flowPulseMillis, g_flowPulseCount;  // Used by interrupts
 unsigned long g_flowPulseCountPreInfusion, g_lastFlowPulseCount;
-double sleepTimer;
+unsigned long g_sleepTimer;
 
 // Settings for Acaia Scale
 #ifdef ACAIA_LUNAR_INTEGRATION
@@ -208,7 +208,11 @@ void setup()
 	// Initialize hardware
 	md.init(); // Initialize VNH5019 pump driver
 	tft.begin(); // Initialize displays
+#ifdef DISPLAY_ROTATION
 	tft.setRotation(2);
+#endif
+
+	
 	
 	Serial.begin(115200);
 	Serial.println(" ");
@@ -360,12 +364,15 @@ void loop(void)
 		md.setM1Speed(0); //Shut down pump motor
 
 #endif
-		if (millis() > sleepTimer)
+#ifndef AUTO_SLEEP
+sleepTimerReset();
+#endif
+		if (millis() > g_sleepTimer)
 		{
-				gotoSleep();
-				return;
+			Serial.println("Going to sleep...");
+			gotoSleep();
 		}
-
+		
 #ifdef MQTT		
 		esp.Process();
 #endif
@@ -519,7 +526,9 @@ void loop(void)
 			megunolinkPlot.SendData("PWM", pumpPWM);
 			megunolinkPlot.SendData("pulses", lastFlowPulseCount);
 			megunolinkPlot.SendFloatData("ml/min", flowRate(preInfusion), 1);
+#ifdef ACAIA_LUNAR_INTEGRATION
 			megunolinkPlot.SendFloatData("gr", scaleWeight, 1);
+#endif			
 #endif 
 
 #ifdef MQTT

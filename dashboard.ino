@@ -100,7 +100,7 @@ void displayPressureandWeight()
 			tft.print(currentDose, 1);
 			tft.print(" g");
 			lastCurrentDose = currentDose;
-			sleepTimer = sleepTimerReset(); 
+			sleepTimerReset(); 
 		}
 
 //Display Weight & EBF
@@ -140,7 +140,7 @@ void displayPressureandWeight()
 				tft.print(scaleWeight/currentDose, 1);
 			}
 			lastScaleWeight = scaleWeight; // avoid flicker....
-			sleepTimer = sleepTimerReset();
+			sleepTimerReset();
 		}
 		
 #endif

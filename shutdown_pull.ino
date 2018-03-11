@@ -25,7 +25,7 @@ void resetSystem()
 	g_newPull = false;		//
 	g_flushCycle = true; 	// be ready for the next cleaning cycle (not Serial port initiated)
 	sleepTimerReset();
-
+	
 	//*****************************************************************************
 	// Clear interrupt cache and attach interrupt - and be ready for next pull
     //*****************************************************************************	

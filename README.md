@@ -97,4 +97,7 @@
 
 	v0.43
 		Corrected a situation where pull would stall and the ml/min would remain stuck
+		
+	v0.44
+		Added a directive to enable/disable sleep AUTO_SLEEP
 */

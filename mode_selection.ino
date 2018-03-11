@@ -169,7 +169,8 @@ void gotoSleep()
 	initializeDisplay();
 }
 
-double sleepTimerReset()
+void sleepTimerReset()
 {
- sleepTimer = millis() + (SLEEP_TIMER_MINUTES * 60000);
+	g_sleepTimer = millis() + (SLEEP_TIMER_MINUTES * 60000);
 }
+

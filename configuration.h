@@ -19,7 +19,7 @@
 #define BUTTON_4 0								 // 4th button (double mug)
 
 // For debugging, this sends the entire EEPROM content to the serial monitor
-#define EEPROM_SERIAL_DOWNLOAD
+//#define EEPROM_SERIAL_DOWNLOAD
 
 // Define MQTT channel
 //#define MQTT
@@ -45,7 +45,8 @@
 // const char * mac = "001C971267DF"; 
 // #define ACAIA_SCALE_MAC "001C971267DF"
 
-// Sleep timer puts the GUI (but not the Arduino or peripherals to sleep (in minutes)
+// AUTO_SLEEP enables a sleep timer puts the GUI (but not the Arduino or peripherals) to sleep (in minutes)
+//#define AUTO_SLEEP 
 #define SLEEP_TIMER_MINUTES 5  
 
 //Flowmeter Selection
@@ -154,6 +155,8 @@ D53 SD_NSS
 #define LCD_RD 41 // LCD Read goes to Analog 0
 #define LCD_RESET A4 // Can alternately just connect to Arduino's reset pin
 */
+
+#define DISPLAY_ROTATION
 
 
 

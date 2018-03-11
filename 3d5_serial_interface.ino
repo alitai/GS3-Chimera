@@ -73,6 +73,6 @@ void serialControl()
 	}		
 	
 	Serial2.write(incomingByte); //This line authorizes the 3d5 to start the pull; we now wait for group solenoid interrupt....
-	sleepTimer = sleepTimerReset(); 
+	sleepTimerReset(); 
 }
 
