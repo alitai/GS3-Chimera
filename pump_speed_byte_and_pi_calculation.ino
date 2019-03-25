@@ -2,26 +2,29 @@
 // Calculate and return pump speed per pull mode
 //***********************************************************************************
 
-unsigned setPumpPWMbyMode(unsigned profileIndex, unsigned long pullTimer, unsigned pumpPWM, float currentPressure, boolean preInfusion, unsigned sumFlowProfile)
+uint16_t setPumpPWMbyMode(uint16_t profileIndex, uint32_t pullTimer, uint16_t pumpPWM, double currentPressure, bool preInfusion, uint16_t sumFlowProfile)
 {
-	unsigned currentPotValue = analogRead(CONTROL_POT);
+	uint16_t currentPotValue; 
 	double PIDSetValue;
+	
 	switch(g_pullMode)
 	{
 		case MANUAL_PULL:	
+			currentPotValue = measurePotValue();
 #ifdef OTTO_HTWF 
 			// For Otto Controls HTWF-1A12A22A Hall Effect 0-5V paddle control
-			if (currentPotValue < 520)
-				pumpPWM = constrain(map(currentPotValue, 100, 520, 0, FLBThresholdPWM), pumpMinPWM, FLBThresholdPWM);
+			// The range of pot control depends on FLB solenoid activation...
+						if (preInfusion) 
+				pumpPWM = constrain(map(currentPotValue, 10, 500, 0, pumpMaxPWM * 0.75), pumpMinPWM, pumpMaxPWM);//FLBThresholdPWM), pumpMinPWM, pumpMaxPWM);//FLBThresholdPWM + 150);
 			else
-				pumpPWM = constrain(map(currentPotValue, 520, 930, FLBThresholdPWM, pumpMaxPWM), FLBThresholdPWM, pumpMaxPWM);
+				pumpPWM = constrain(map(currentPotValue, 510, 1015, pumpMinPWM, pumpMaxPWM), pumpMinPWM, pumpMaxPWM);//FLBThresholdPWM - 50, pumpMaxPWM);
 #else
-			pumpPWM = (unsigned)((float)currentPotValue * pumpMaxPWM / 1024); 
+			pumpPWM = (uint16_t)(currentPotValue * pumpMaxPWM / 1024); 
 #endif
 			break;
 
 		case AUTO_PWM_PROFILE_PULL:
-			pumpPWM = (unsigned) 400 / 255 * ((g_PWMProfile[profileIndex]+ (g_PWMProfile[profileIndex+1] 
+			pumpPWM = (uint16_t) 400 / 255 * ((g_PWMProfile[profileIndex]+ (g_PWMProfile[profileIndex+1] 
 						- g_PWMProfile[profileIndex])*((double)(pullTimer % 500)/500.0)));
 			break;
 
@@ -42,6 +45,7 @@ unsigned setPumpPWMbyMode(unsigned profileIndex, unsigned long pullTimer, unsign
 			break;	
 
 		case SLAYER_LIKE_PI_PRESSURE_PROFILE:	
+			currentPotValue = measurePotValue();
 			PIDSetValue = (double)currentPotValue / 90.0;    // 0-~11Bar
 			pumpPWM = executePID_P(PIDSetValue, pumpPWM, currentPressure); 
 			if (pullTimer < 1000 || currentPressure < unionThreshold)                                                                         // override during PI
@@ -50,6 +54,7 @@ unsigned setPumpPWMbyMode(unsigned profileIndex, unsigned long pullTimer, unsign
 			
 		case FLOW_PRESSURE_PROFILE:
 			// Centers the "detente" For Otto Controls HTWF-1A12A22A Hall Effect 0-5V paddle control
+			currentPotValue = measurePotValue();
 			if (preInfusion)
 			{
 				PIDSetValue = constrain(map(currentPotValue, 100, 520, PID_MIN_FLOW, PID_MAX_FLOW), PID_MIN_FLOW, PID_MAX_FLOW);
@@ -71,49 +76,66 @@ unsigned setPumpPWMbyMode(unsigned profileIndex, unsigned long pullTimer, unsign
 	return pumpPWM;
 }
 
-
-
 //*******************************************************************************
 // Calculate FLB cutoff for each pull mode and activate/deactivate solenoid
 //*******************************************************************************
 
-boolean setFlowLimitBypass(unsigned pumpPWM, int profileIndex, boolean preInfusion, float currentPressure)
+bool setFlowLimitBypass(uint16_t pumpPWM, uint16_t profileIndex, bool preInfusion, double currentPressure)
 {
+	uint16_t currentPotValue; 
+	switch(g_pullMode)    //let's check if PI should continue....
+	{
+		case MANUAL_PULL:
+#ifdef OTTO_HTWF
+			// For Otto Controls HTWF-1A12A22A Hall Effect 0-5V paddle control
+			currentPotValue = measurePotValue();
+			if (currentPotValue < 520)
+				preInfusion = true;
+			else if (currentPotValue < 535)
+				preInfusion = preInfusion;
+			else
+				preInfusion = false;
+#else
+			if (pumpPWM > FLBThresholdPWM + 1)
+				preInfusion = false; 
+			else
+				preInfusion = true;
+#endif
+			break;
+			
+		case SLAYER_LIKE_PI_PRESSURE_PROFILE:
+			if(profileIndex > 2 && currentPressure > unionThreshold)
+				preInfusion = false;
+			break;
+
+		case SLAYER_LIKE_PULL:
+			if (profileIndex > (slayerPIPeriod << 1))
+				preInfusion = false;
+			else preInfusion = true;
+			break;
+
+		case FLOW_PRESSURE_PROFILE:
+			if(profileIndex > 2 && currentPressure > unionThreshold)
+				preInfusion = false;
+			break;
+			
+		case AUTO_PWM_PROFILE_PULL:
+		case AUTO_PRESSURE_PROFILE_PULL:
+		case AUTO_FLOW_PROFILE_PULL:
+			if (pumpPWM > FLBThresholdPWM + 1)
+				preInfusion = false;
+			break;
+	}
+	
 	if (preInfusion)
 	{
 		if (profileIndex % 2 == 0) //flash the LED
 			ledColor('g');
 		else
 			ledColor('x');
-
-		switch(g_pullMode)    //let's check if PI should continue....
-		{
-			case MANUAL_PULL:
-			case AUTO_PWM_PROFILE_PULL:
-			case AUTO_PRESSURE_PROFILE_PULL:
-			case AUTO_FLOW_PROFILE_PULL:
-				if (pumpPWM > FLBThresholdPWM + 1)
-					preInfusion = false;
-				break;
-
-			case SLAYER_LIKE_PULL:
-				if (profileIndex > slayerPIPeriod << 1)
-					preInfusion = false;
-				break;	
-
-			case SLAYER_LIKE_PI_PRESSURE_PROFILE:
-				if(profileIndex > 2 && currentPressure > unionThreshold)
-					preInfusion = false;
-				break;
-				
-			case FLOW_PRESSURE_PROFILE:
-				if(profileIndex > 2 && currentPressure > unionThreshold)
-					preInfusion = false;
-				break;
-		}
 	}
-	if (!preInfusion) 
-		ledColor('g');
+	else ledColor('g');
+	
 	setFLB(!preInfusion);
 	return preInfusion;	
 }
@@ -129,8 +151,8 @@ void flushCycle()
 	Serial.println("Flush activated...");
 	detachInterrupt(digitalPinToInterrupt(GROUP_SOLENOID));
 	g_newPull = false;
-	unsigned long flushTimer = millis();
-	unsigned long flushPauseTimer = flushTimer;
+	uint16_t long flushTimer = millis();
+	uint16_t long flushPauseTimer = flushTimer;
 	while ((millis() - flushPauseTimer) < 6000 && !Serial2.available()) //Pause is about 6 seconds...
 	{
 		while (digitalRead(GROUP_SOLENOID) == LOW && !Serial2.available())
@@ -153,7 +175,7 @@ void flushCycle()
 	resetSystem();
 }
 
-void setFLB (boolean enable)
+void setFLB (bool enable)
 {
 #ifdef INVERT_FLB_OUTPUT 
 			digitalWrite(FLOW_LIMIT_BYPASS, !enable); // switch FLB solenoid

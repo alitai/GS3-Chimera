@@ -312,7 +312,7 @@ void DeviceHM10::disconnect() {
 }
 
 
-boolean DeviceHM10::initDevice() {
+bool DeviceHM10::initDevice() {
     if (!sendCommand("", "")) return false;
     if (!sendCommand("RENEW", "")) return false;
     if (!sendCommand("IMME", "1")) return false;

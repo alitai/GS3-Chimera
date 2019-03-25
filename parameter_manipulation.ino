@@ -1,8 +1,21 @@
 //  Setup Slayer parameter adjustment screen
+
+uint16_t measurePotValue()
+{
+	//returns a value of 0-1024 for all types of controls...
+	uint16_t currentPotValue = analogRead(CONTROL_POT);
+#ifdef OTTO_HTWF 
+	// For Otto Controls HTWF-1A12A22A Hall Effect 0-5V paddle control
+	currentPotValue = constrain(map(currentPotValue, 95, 925, 0, 1024), 1, 1024);//FLBThresholdPWM), pumpMinPWM, pumpMaxPWM);//FLBThresholdPWM + 150);
+#endif
+	return(currentPotValue);
+}	
+
+
 void menuSetupSlayerParameters()
 {
-	int currentPotValue = analogRead(CONTROL_POT); 
-	boolean potMoved = wasPotMoved(currentPotValue); 	//check if potentiometer was moved	
+	uint16_t currentPotValue = measurePotValue(); //analogRead(CONTROL_POT); 
+	bool potMoved = wasPotMoved(currentPotValue); 	//check if potentiometer was moved	
 
 	switch (g_selectedParameter)
 	{
@@ -10,8 +23,8 @@ void menuSetupSlayerParameters()
 			if (potMoved)
 			{
 // Assaf extended the range from 45 to 70 seconds 			
-			//	slayerPIPeriod = map(currentPotValue, 0, 1023, 4, 45); // 5 - 45 seconds
-				slayerPIPeriod = map(currentPotValue, 100, 950, 4, 70); // 100-950 for HTWF-1A22A12A 4 - 70 seconds
+			//	slayerPIPeriod = map(currentPotValue, 0, 1023, 4, 45); // 4 - 45 seconds
+				slayerPIPeriod = map(currentPotValue, 0, 1023, 4, 70); //4 - 70 seconds
 				graphDrawSlayerProfile(); // Updates the graph with the new data...
 			}
 			EEPROM.update(43, slayerPIPeriod);
@@ -28,7 +41,7 @@ void menuSetupSlayerParameters()
 	}
 }
 
-boolean wasPotMoved(int currentPotValue)
+bool wasPotMoved(uint16_t currentPotValue)
 {	
 	//debounce the move (to reduce flicker)
 	int potDelta = 5;
@@ -43,7 +56,7 @@ boolean wasPotMoved(int currentPotValue)
 
 void editParametersOverSerial()
 {
-	boolean edit = true;
+	bool edit = true;
 	
 	while (edit)
 	{
@@ -51,7 +64,8 @@ void editParametersOverSerial()
 		
 		Serial.println("");
 		Serial.println("Chimera is disabled. Edit System Parameters:");
-		Serial.println("Press a letter to change the value of its parameter. Press X to eXit.");
+		Serial.println("Press a letter to change the value of its parameter.");
+		Serial.println("Press Z for an EEPROM dump. Press X to eXit.");
 		Serial.println("Make sure you set your terminal to send Newline line endings");
 		Serial.println();
 
@@ -63,10 +77,18 @@ void editParametersOverSerial()
 		while 
 			(command != 'A' && command != 'B' && command != 'C' && command != 'D' && command != 'E' 
 			&& command != 'F' && command != 'G' && command != 'H' && command != 'I'	&& command != 'J' 
-			&& command != 'K' && command != 'L' && command != 'M' && command != 'N' && command != 'X');
+			&& command != 'K' && command != 'L' && command != 'M' && command != 'N' && command != 'X' && command != 'Z');
 
 		if (command == 'X')
 		{
+			Serial.println("Chimera is now ready for a new pull. To enter parameter editor type E.");
+			edit = false;
+			return;
+		}
+		
+		if (command == 'Z') 
+		{	
+			readProfilestoSerial();
 			Serial.println("Chimera is now ready for a new pull. To enter parameter editor type E.");
 			edit = false;
 			return;
@@ -78,11 +100,57 @@ void editParametersOverSerial()
 			flushChar = Serial.read();
 		}	while (flushChar != '\n');
 		
+
 		Serial.print("Please enter new value for ");
-		Serial.print(command);
+		switch (command)
+		{
+			case 'A': 
+				Serial.print("FLBThresholdPWM");
+				break;
+			case 'B':
+				Serial.print("debounceCount");
+				break;
+			case 'C':
+				Serial.print("pumpMinPWM");
+				break;
+			case 'D':
+				Serial.print("pumpMaxPWM");
+				break;
+			case 'E':
+				Serial.print("mlPerFlowMeterPulse");
+				break;	
+			case 'F':
+				Serial.print("unionThreshold");
+				break;						
+			case 'G':
+				Serial.print("Kpp");
+				break;			
+			case 'H':
+				Serial.print("Kpi");
+				break;			
+			case 'I':
+				Serial.print("Kpd");
+				break;			
+			case 'J':
+				Serial.print("Kfp");
+				break;			
+			case 'K':
+				Serial.print("Kfi");
+				break;			
+			case 'L':
+				Serial.print("Kfd");
+				break;			
+			case 'M':
+				Serial.print("slayerMainPWM");
+				break;			
+			case 'N':
+				Serial.print("slayerPIPeriod");
+				break;
+		}
+		//Serial.print(command);
 		Serial.println(":");
 		String inString = "";
-		boolean newValue = false;
+		bool newValue = false;
 		while (!newValue) 
 		{
 			while (Serial.available() > 0)
@@ -108,7 +176,7 @@ void editParametersOverSerial()
 			debounceCount = inString.toInt();
 			Serial.print("New debounceCount value is: ");
 			Serial.println(debounceCount, DEC);
-			EEPROM.update(2, (byte)debounceCount);
+			EEPROM.update(2, (byte)debounceCount); //EEPROM.update(2, (byte)debounceCount);
 			break;
 		case 'C':
 			pumpMinPWM = inString.toInt();
@@ -128,6 +196,12 @@ void editParametersOverSerial()
 			Serial.println(mlPerFlowMeterPulse, 3);
 			EEPROM.put(8, (float)mlPerFlowMeterPulse);
 			break;
+		case 'F':
+			unionThreshold = inString.toFloat();
+			Serial.print("New unionThreshold value is: ");
+			Serial.println(unionThreshold, 3);
+			EEPROM.put(12, (double)unionThreshold);
+			break;			
 		case 'G':
 			Kpp = inString.toFloat();
 			Serial.print("New Kpp value is: ");
@@ -174,8 +248,9 @@ void editParametersOverSerial()
 			slayerPIPeriod = inString.toInt(); // EEPROM.read(38);
 			Serial.print("New slayerPIPeriod value is: ");
 			Serial.println(slayerPIPeriod, DEC);
-			EEPROM.update(43, slayerPIPeriod);
+			EEPROM.update(43, slayerPIPeriod); //EEPROM.update(43, slayerPIPeriod);
 			break;
+	
 		}
 		
 		Serial.println("Please enter Y to continue...");

@@ -88,7 +88,14 @@ void pullModeSwitching(byte softKey)
 					g_selectedParameter = 0;
 					writeSlayerParameterstoEEPROM();
 				}
-				g_lastParameterPotValue = analogRead(CONTROL_POT);
+/*#ifdef OTTO_HTWF 
+			// For Otto Controls HTWF-1A12A22A Hall Effect 0-5V paddle control
+				g_lastParameterPotValue = constrain(map(analogRead(CONTROL_POT), 100, 930, 0, 1024), 0, 1024);//FLBThresholdPWM), pumpMinPWM, pumpMaxPWM);//FLBThresholdPWM + 150);
+			
+#else*/
+				g_lastParameterPotValue = measurePotValue();
+//#endif
+				
 				menuSetupSlayerParameters();
 			}
 			if (g_selectedParameter == 0)
@@ -123,54 +130,4 @@ void pullModeSwitching(byte softKey)
 	g_modeSwitchIncomplete = false;
 }
 
-void gotoSleep()
-{
-	tft.fillScreen(bg_Color);
-	tft.drawRect(0,0,240,320, ILI9341_GREENYELLOW); // 240x320
-	tft.drawRect(1,1,238,318, ILI9341_GREENYELLOW);
-	tft.drawRect(2,2,236,316, ILI9341_YELLOW);
-	tft.drawRect(3,3,234,314, ILI9341_YELLOW);
-	printSomething("GS/3 Chimera",50, 110, ILI9341_YELLOW, &FreeSans12pt7b, false );
-	printSomething("Touch screen or", 54, 180, text_dark_Color, &FreeSans9pt7b, false );
-	printSomething("GS/3 button to wake",41, 210, text_dark_Color, &FreeSans9pt7b, false );
-
-#ifdef ACAIA_LUNAR_INTEGRATION	
-	disconnectScale();
-#endif
-
-//#ifdef TS_XPT2046
-#ifdef TS_STMPE
-	while (!ts.touched()) //wait until ts touched or 3d5 button pressed...
-#endif
-#ifdef TFT_TOUCH
-	while(!ts.Pressed())
-#endif
-	{
-		if (Serial2.available()) //wait until 3d5 button pressed...
-		{
-			byte serialCommand = Serial2.read();                  //flush whatever button was pressed...
-			if(serialCommand == 0x15 || serialCommand == 0x19)    //unless it is hot water - which should be dispensed immediately...
-			{
-				Serial2.write(serialCommand);                     // If just water no need to wake up...
-				if (serialCommand == 0x19)
-					{
-						while (digitalRead(GROUP_SOLENOID) == HIGH); //wait for the 3-way
-						flushCycle();
-					}
-			}
-			else
-				break;                                             // Wake up...
-		}
-	}
-
-#ifdef ACAIA_LUNAR_INTEGRATION
-	connectScale();	
-#endif
-	initializeDisplay();
-}
-
-void sleepTimerReset()
-{
-	g_sleepTimer = millis() + (SLEEP_TIMER_MINUTES * 60000);
-}
 

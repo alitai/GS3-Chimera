@@ -39,7 +39,7 @@ void selectPIDbyMode()
 //*************************************************************************************************
 // Execute a PID calc (if it is time to...) and display PID parameters (Input, Output and Setpoint) 
 //*************************************************************************************************
-unsigned executePID_P(double setValue, unsigned pumpPWM, double currentPressure)
+uint16_t executePID_P(double setValue, uint16_t pumpPWM, double currentPressure)
 {
 	g_PIDInput_P = currentPressure;
 	g_PIDSetpoint_P = setValue; 
@@ -59,12 +59,12 @@ unsigned executePID_P(double setValue, unsigned pumpPWM, double currentPressure)
 		if (g_PIDOutput_P < 0)
 			return 0;
 		else 
-			return (unsigned)g_PIDOutput_P;
+			return (uint16_t)g_PIDOutput_P;
     }
 	return pumpPWM;
 }
 
-unsigned executePID_F(double setValue, unsigned pumpPWM, double currentFlow)
+uint16_t executePID_F(double setValue, uint16_t pumpPWM, double currentFlow)
 {
 	g_PIDInput_F = currentFlow;
 	g_PIDSetpoint_F = setValue; 
@@ -84,7 +84,7 @@ unsigned executePID_F(double setValue, unsigned pumpPWM, double currentFlow)
 		if (g_PIDOutput_F < 0)
 			return 0;
 		else 
-			return (unsigned)g_PIDOutput_F;
+			return (uint16_t)g_PIDOutput_F;
 	}
 	return pumpPWM;
 }  

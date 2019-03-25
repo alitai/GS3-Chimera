@@ -33,19 +33,19 @@ byte touchpadSenseKey()
 	p.x = ts.RawX();
 	p.y = ts.RawY();
 */
-	if (100 < p.y < 650)    // menu area
+	if (10 < p.y < 800)    // menu area
 	{
-		if (p.x > 3400)
+		if (p.x > 3300)
 			softKey = 4;
-		else if (p.x > 2200)
+		else if (p.x > 2000)
 			softKey = 3;
-		else if (p.x > 900)
+		else if (p.x > 700)
 			softKey = 2;
-		else if (100 < p.x < 899)
+		else if (p.x > 10)
 			softKey = 1;
 		delay(250);
 	}
-	if (p.x >100 && p.y >100)
+	if (p.x >10 && p.y >10)
 	{
 		Serial.print("Raw x,y = ");
 		Serial.print(p.x);
@@ -56,7 +56,6 @@ byte touchpadSenseKey()
 #ifdef ADAFRUIT_STMPE	
 	ts.writeRegister8(STMPE_INT_STA, 0xFF);
 #endif
-	sleepTimerReset();  //extend sleep timer after activity... 
 	return softKey;
 }
 	

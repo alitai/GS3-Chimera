@@ -26,7 +26,7 @@ void dashboardSetup()
 #endif
 }
 
-void dashboardUpdate(unsigned pumpPWM, int profileIndex, float averagePressure, long lastFlowPulseCount, boolean preInfusion)
+void dashboardUpdate(uint16_t pumpPWM, uint16_t profileIndex, float averagePressure, uint16_t long lastFlowPulseCount, bool preInfusion)
 {
     //PWM setting display
     printSomething(NULL, 42, 13 , PWM_Color, &FreeSans9pt7b , true);
@@ -36,12 +36,9 @@ void dashboardUpdate(unsigned pumpPWM, int profileIndex, float averagePressure, 
     tft.print(" %");
     
     // Water volume
-    printSomething(NULL, 155, 40 , flow_Color, &FreeSans9pt7b , true);
+    printSomething(NULL, 155, 40 , flowVolume_Color, &FreeSans9pt7b , true);
     tft.fillRect(154, 26, 54, 17, bg_Color);
-    float volume = (g_flowPulseCount - g_flowPulseCountPreInfusion) * mlPerFlowMeterPulse 
-				+ g_flowPulseCountPreInfusion * mlPerFlowMeterPulsePreInfusion;
-	if (volume < 0 || volume > 250)
-		volume = 0.0;
+	float volume = flowVolume();
 	tft.print(volume, 0); // Volume in ml
     tft.setTextColor(text_dark_Color); 
     tft.print(" ml");
@@ -60,7 +57,7 @@ void dashboardUpdate(unsigned pumpPWM, int profileIndex, float averagePressure, 
     tft.setTextColor(timer_Color);
     tft.setFont(&FreeSans12pt7b);
     if (profileIndex % 2 == 0)
-		tft.fillRect(54, 77, 38, 22, bg_Color); //reduce flicker
+		tft.fillRect(53, 77, 41, 22, bg_Color);//(54, 77, 38, 22, bg_Color); //reduce flicker
     if (profileIndex /2 < 10)
 		tft.setCursor(78,97);
     else if (profileIndex /2 < 100)
@@ -100,7 +97,6 @@ void displayPressureandWeight()
 			tft.print(currentDose, 1);
 			tft.print(" g");
 			lastCurrentDose = currentDose;
-			sleepTimerReset(); 
 		}
 
 //Display Weight & EBF
@@ -129,7 +125,7 @@ void displayPressureandWeight()
 			tft.fillRect(169, 79, 70, 23, bg_Color);
 			//printSomething(NULL, 170, 97, weight_Color, &FreeSans12pt7b , true);
 			
-			// Don't show rediculous numbers when measuring th PF...
+			// Don't show rediculous numbers when measuring the PF...
 			if (scaleWeight/currentDose > 8) 
 				printSomething("-high-", 170, 97, ILI9341_RED, &FreeSans9pt7b , true);
 			else if (scaleWeight/currentDose < 0) 
@@ -140,12 +136,9 @@ void displayPressureandWeight()
 				tft.print(scaleWeight/currentDose, 1);
 			}
 			lastScaleWeight = scaleWeight; // avoid flicker....
-			sleepTimerReset();
 		}
-		
 #endif
 		g_lastMillis = millis();
-	
 	}
 }
 
@@ -166,7 +159,7 @@ float measurePressure()
 
 }
 
-double flowRate(boolean preInfusion)
+double flowRate(bool preInfusion)
 {
 	double flowRate;
 	if(g_averageF.mean() != 0.0f)
@@ -179,4 +172,15 @@ double flowRate(boolean preInfusion)
 	else
 		flowRate = 0.0;
 	return flowRate;
+}
+
+float flowVolume()
+{
+    float volume = (g_flowPulseCount - g_flowPulseCountPreInfusion) * mlPerFlowMeterPulse 
+				+ g_flowPulseCountPreInfusion * mlPerFlowMeterPulsePreInfusion;
+	if (volume < 0 || volume > 250)
+		return 0.0;
+	else
+		return volume;
+	
 }

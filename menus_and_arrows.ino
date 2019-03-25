@@ -1,6 +1,5 @@
 byte menuNavigation()
 {
-	
 	// If there is an incomplete Mode switch (e.g. triggered from 3d5 serial port) ignore any manual input until complete  
 	if (g_modeSwitchIncomplete)
 		return 0;                
@@ -19,8 +18,9 @@ byte menuNavigation()
 }
 
 
-void menuDrawSoftKeys(char* softKey2Label, boolean isSoftKey2Selected, char* softKey3Label, boolean isSoftKey3Selected)
+void menuDrawSoftKeys(char* softKey2Label, bool isSoftKey2Selected, char* softKey3Label, bool isSoftKey3Selected)
 {
+#if DRAW_MENUS	
 	// set font for menus
 	tft.setFont(&FreeSans9pt7b);
 
@@ -39,7 +39,7 @@ void menuDrawSoftKeys(char* softKey2Label, boolean isSoftKey2Selected, char* sof
 
 	// Print label text centered on soft key 2
 	int  x1, y1;
-	unsigned w, h;
+	uint16_t w, h;
 	tft.getTextBounds(softKey2Label, 0, 200, &x1, &y1, &w, &h); // size of label is used to center label on button
 	tft.setCursor(31 + 42 - (w >> 1), 305);
 	tft.print(softKey2Label);
@@ -61,10 +61,12 @@ void menuDrawSoftKeys(char* softKey2Label, boolean isSoftKey2Selected, char* sof
 	tft.getTextBounds(softKey3Label, 0, 200, &x1, &y1, &w, &h);
 	tft.setCursor(126 + 42 - (w >> 1), 305);
 	tft.print(softKey3Label);
+#endif
 } 
 
 void menuDrawNavArrows()
 {
+#if DRAW_MENU	
 // display proper navigation arrows
 	if (g_currentMenu > 0)
 		tft.fillTriangle(9,300,19,308,19,292,ILI9341_GREEN);
@@ -81,4 +83,5 @@ void menuDrawNavArrows()
 		tft.fillTriangle(231,300,221,308,221,292,bg_Color);
 		tft.drawTriangle(231,300,221,308,221,292,ILI9341_DARKGREEN);
 	}
+#endif	
 }

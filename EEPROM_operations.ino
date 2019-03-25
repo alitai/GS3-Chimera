@@ -16,8 +16,8 @@
 //	28		Kfi					double (4 bytes)
 //	32		Kfd					double (4 bytes)
 //	36		slayerPIFlowRate	byte
-//	37		slayerMainPWM		int
-//	38		slayerPIPeriod		byte
+//	41		slayerMainPWM		int
+//	43		slayerPIPeriod		byte
 //  39      slayerMaxPWM		int
 //
 // 	Profile data structure
@@ -33,11 +33,11 @@
 // Store PWM, pressure and flow Profiles in EEPROM
 void storeProfilesinEEPROM()
 {
-	EEPROM.update(97, (byte)sizeof(g_PWMProfile)); // Always 201
-	EEPROM.update(98, (byte)sizeof(g_pressureProfile)); //Always 201
-	EEPROM.update(99, (byte)sizeof(g_flowProfile)); // Always 201
+	EEPROM.update(97, (byte)sizeof(g_PWMProfile)); // Should be MAX_PROFILE_INDEX + 1
+	EEPROM.update(98, (byte)sizeof(g_pressureProfile)); 
+	EEPROM.update(99, (byte)sizeof(g_flowProfile)); 
 
-	int shiftAddr = 100; // Start writing arrays  at 10th byte
+	int shiftAddr = 100; // Start writing arrays at 100th byte
 	int shiftPP = shiftAddr + sizeof(g_PWMProfile);
 	int shiftFP = shiftPP + sizeof(g_pressureProfile);
 
@@ -88,6 +88,7 @@ void readSWParametersfromEEPROM()
 	slayerPIFlowRate = EEPROM.read(40);
 	EEPROM.get(41, slayerMainPWM);
 	slayerPIPeriod = EEPROM.read(43);
+	EEPROM.get(44, slayerMaxPWM);
 } 
 
 // Update software parameters in EEPROM
@@ -109,7 +110,7 @@ void writeSWParameterstoEEPROM()
 	EEPROM.update(40, slayerPIFlowRate);
 	EEPROM.put(41, slayerMainPWM);
 	EEPROM.update(43, slayerPIPeriod);
-	EEPROM.put(44, slayerMaxPWM);
+ 	EEPROM.put(44, slayerMaxPWM); //const
 } 
 
 void writeSlayerParameterstoEEPROM()
@@ -218,12 +219,27 @@ void readEEPROMtoSerial()
 	Serial.print(intValue/4, DEC);
 	Serial.println("%)");
 
-	
-	value = EEPROM.read(38);
+	value = EEPROM.read(43);
 	Serial.print("n: slayerPIPeriod");
 	Serial.print("\t");
 	Serial.println(value, DEC);
 	
+	value = EEPROM.read(40);
+	Serial.print("slayerPIFlowRate");
+	Serial.print("\t");
+	Serial.println(value, DEC);
+	Serial.print("/400 (");
+	Serial.print(value/4, DEC);
+	Serial.println("%)");
+	
+	value = EEPROM.read(44);
+	Serial.print("slayerMaxPWM");
+	Serial.print("\t");
+	Serial.println(value, DEC);
+	Serial.print("/400 (");
+	Serial.print(value/4, DEC);
+	Serial.println("%)");
+
 	Serial.println("*****************************************");
 	Serial.println("");
 }	
@@ -231,30 +247,50 @@ void readEEPROMtoSerial()
 void readProfilestoSerial() 
 {
 	byte value;
-	float fpvalue;	
+	
+	int PWMProfileSize = EEPROM.read(97);
+	int pressureProfileSize = EEPROM.read(98);
+	int flowProfileSize = EEPROM.read(99);
 
+	int shiftAddr = 100; // Start reading arrays at 10th byte (should match similar decleration at storeProfilesinEEPROM()
+	int shiftPP = shiftAddr + PWMProfileSize;
+	int shiftFP = shiftPP + pressureProfileSize;
 
-	int address = 0;
-
-	value = EEPROM.read(97);
 	Serial.print("Sizeof PWM Profile");
 	Serial.print("\t");
-	Serial.print(value, DEC);
+	Serial.print(PWMProfileSize, DEC);
 	Serial.println();
 
-	value = EEPROM.read(98);
 	Serial.print("Sizeof Pressure Profile");
 	Serial.print("\t");
-	Serial.print(value, DEC);
+	Serial.print(pressureProfileSize, DEC);
 	Serial.println();
 
-	value = EEPROM.read(99);
 	Serial.print("Sizeof Flow Profile");
 	Serial.print("\t");
-	Serial.print(value, DEC);
+	Serial.print(flowProfileSize, DEC);
 	Serial.println();
+	
+	Serial.println("No.   PWM    Pressure     Flow");	
+	for (int addr = 0; addr < PWMProfileSize; addr++)
+	{
+		Serial.print(addr);
+		Serial.print("\t");
 
-	for (int i = 100; i < 301; i++)
+		value = EEPROM.read(addr + shiftAddr);
+		Serial.print(value, DEC);
+		Serial.print("\t");	
+	
+		value = EEPROM.read(addr + shiftPP);
+		Serial.print(value, DEC);
+		Serial.print("\t");
+
+		EEPROM.read(addr + shiftFP);
+		Serial.print(value, DEC);
+		Serial.println();
+	}
+
+/*	for (int i = 100; i < 301; i++)
 	{
 		value = EEPROM.read(i);
 		Serial.print("PWM");
@@ -286,4 +322,5 @@ void readProfilestoSerial()
 		Serial.print(value, DEC);
 		Serial.println();
 	}
+	*/
 }

@@ -1,4 +1,4 @@
-#define CURRENT_VERSION "V0.44"
+#define CURRENT_VERSION "V0.50"
 
 #include "VNH5019MotorShieldMega.h"
 #include "configuration.h"
@@ -59,10 +59,10 @@ PID flowPID(&g_PIDInput_F, &g_PIDOutput_F, &g_PIDSetpoint_F,Kfp,Kfi,Kfd, DIRECT)
 // Initialize cyclical averages for Pressure and Flow Rate 
 Average<float> g_averageP(6);
 #ifdef GICAR_FLOWMETER
-Average<unsigned long> g_averageF(4); // Pulse rate can be as low as 4-5 per second. So we select 4 to ensure that the update rates are reasonable.
+Average<uint32_t> g_averageF(FLOW_AVERAGES_GICAR); // Pulse rate can be as low as 4-5 per second. So we select 4 to ensure that the update rates are reasonable.
 #endif
 #ifdef DIGMESA_FLOWMETER
-Average<unsigned long> g_averageF(10); // Pulse rate is 20x higher which can also be noisier
+Average<uint32_t> g_averageF(FLOW_AVERAGES_DIGMESA); // Pulse rate is 20x higher which can also be noisier
 #endif
 
 #ifdef MQTT
@@ -136,36 +136,30 @@ static uint32_t last;
 // PWM Voltage Profile (as sent to the VNH5019 is kept in a 200 byte array)
 // Brew boiler pressure log is the average pressure by the end of the 500mSec period
 // Flow log - each bin has the number of pulses received by the end of the 500mSec period
-byte g_PWMProfile[201] , g_pressureProfile[201], g_flowProfile[201];  
+byte g_PWMProfile[MAX_PROFILE_INDEX + 1] , g_pressureProfile[MAX_PROFILE_INDEX + 1], g_flowProfile[MAX_PROFILE_INDEX + 1];  
 
-unsigned long g_lastMillis = 0;
+uint32_t g_lastMillis = 0;
 
 #define PRINT_SPACE tft.print(" ") // for convenience
 
 unsigned char g_pullMode; 
-int g_currentMenu, g_selectedParameter = 0, g_lastParameterPotValue;
-boolean g_modeSwitchIncomplete = false; 
-boolean g_flushCycle = true, g_activePull; //flush cycled DO NOT imply a Serial port signal. Hence it is default!
-volatile boolean g_newPull; // Used by interrupts
-volatile unsigned long g_flowPulseMillis, g_flowPulseCount;  // Used by interrupts
-unsigned long g_flowPulseCountPreInfusion, g_lastFlowPulseCount;
-unsigned long g_sleepTimer;
+int g_currentMenu, g_selectedParameter = 0;
+uint16_t g_lastParameterPotValue;
+bool g_modeSwitchIncomplete = false, g_flushCycle = true, g_activePull; //flush cycled DO NOT imply a Serial port signal. Hence it is default!
+volatile bool g_newPull; // Used by interrupts
+volatile uint32_t g_flowPulseMillis, g_flowPulseCount;  // Used by interrupts
+uint32_t g_flowPulseCountPreInfusion; //                 , g_lastFlowPulseCount;
+
 
 // Settings for Acaia Scale
 #ifdef ACAIA_LUNAR_INTEGRATION
 #include "Scale.h"
 Scale *scale = NULL;
-unsigned long startTime;
 int state = 0;
-bool isRunning = false;
-float scaleWeight;
-float lastScaleWeight;
+bool scaleConnected = false; //isRunning = false, 
+float scaleWeight, lastScaleWeight, currentDose, lastCurrentDose;
 unsigned char scaleBattery;
-float currentDose;
-float lastCurrentDose;
-boolean scaleConnected = false;
-unsigned long scaleReconnectionTimer;
-unsigned long scaleIdleTimer; 
+uint32_t scaleReconnectionTimer; //scaleIdleTimer, startTime
 #endif
 
 //********************************************************************
@@ -193,7 +187,7 @@ void pullEspresso()  // Checks if group solenoid is powered up and if so trigger
 		g_newPull = true; // interrupt effective only if not actively pulling a shot!
 }  
 
-void flowPulseReceived(boolean preInfusion) // receives flow pulses from the Gicar flow sensor
+void flowPulseReceived(bool preInfusion) // receives flow pulses from the Gicar flow sensor
 {
 	g_flowPulseCount++;
 	g_flowPulseMillis = millis();
@@ -258,9 +252,11 @@ void setup()
 	readProfilestoSerial();
 #endif
 
+
 #ifdef ACAIA_LUNAR_INTEGRATION
 	connectScale();
 #endif
+
 
 #ifdef MQTT
 	// Sync-up with esp-link, this is required at the start of any sketch and initializes the
@@ -303,14 +299,12 @@ void setup()
 
 void loop(void) 
 {
-	unsigned profileIndex, lastProfileIndex;
+	uint16_t profileIndex, lastProfileIndex, pumpPWM, sumFlowProfile;;
 	byte countOffCycles;
-	unsigned long lastFlowPulseCount;
-	unsigned long pullStartTime, pullTimer, lastFlowPulseMillis;
-	unsigned pumpPWM;
-	unsigned sumFlowProfile;
-	boolean preInfusion = false;
-	unsigned long stallTime = mlPerFlowMeterPulse * 60 * 1000 / STALL_FLOW_RATE; // 72mSec if 0.024ml/pulse & STALL_FLOW_RATE = 20ml/min 
+	uint32_t lastFlowPulseCount, pullStartTime, pullTimer, lastFlowPulseMillis;
+	bool preInfusion = false;
+	uint32_t stallTime = mlPerFlowMeterPulse * 60 * 1000 / STALL_FLOW_RATE; // 72mSec if 0.024ml/pulse & STALL_FLOW_RATE = 20ml/min 
+	
 
 #ifdef ACAIA_LUNAR_INTEGRATION		
 	while(currentDose != DEFAULT_DOSE_FOR_EBF && scaleWeight > 10 && scaleConnected /*&& !ts.touched()*/ && ts.Pressed()) //Pause next pull until demitasse removed 
@@ -340,16 +334,14 @@ void loop(void)
 		serialControl();
 		char editNow=Serial.read();
 		if (editNow == 'E' || editNow == 'e') 
-			editParametersOverSerial(); //ruins the display at this point...
+			editParametersOverSerial(); 
 		pullModeSwitching(menuNavigation());
 		measurePressure(); // display pressure always (even when not pulling a shot)
 // The following code connects (if needed for the first time) and updates the Bluetooth weight scale 		
 
 #ifdef ACAIA_LUNAR_INTEGRATION	
-		if (!scaleConnected) 
-			manageScaleConnection();
-		else
-			updateDoseWeight();
+//		manageScaleConnection();
+		updateDoseWeight();
 		displayBattery();
 #endif
 
@@ -357,31 +349,33 @@ void loop(void)
 
 #ifdef SINGLE_PUMP		
 		// Check if pump relay by 3D5 is switched on - if yes assume tank fill cycle
-		if (digitalRead(PUMP_RELAY) == LOW)
-		{    
-		Serial.println("Fill tank");
-			 while (digitalRead(PUMP_RELAY) == LOW && !g_newPull)
-			 {
-				 md.setM1Speed(constrain(flushPWM, pumpMinPWM, pumpMaxPWM));
-			 }
-		  md.setM1Speed(0); //Shut down pump motor
-		  Serial.println("Fill tank stopped.");              
-		}
+    if (digitalRead(PUMP_RELAY) == LOW)
+    {    
+    Serial.println("Fill tank");
+		 while (digitalRead(PUMP_RELAY) == LOW && !g_newPull)
+		 {
+			 md.setM1Speed(constrain(flushPWM, pumpMinPWM, pumpMaxPWM));
+		 }
+      md.setM1Speed(0); //Shut down pump motor
+      Serial.println("Fill tank stopped.");              
+    }
 
 #endif
 
-#ifndef AUTO_SLEEP
-sleepTimerReset();
-#endif
-		if (millis() > g_sleepTimer)
-		{
-			Serial.println("Going to sleep...");
-			gotoSleep();
-		}
-		
 #ifdef MQTT		
 		esp.Process();
 #endif
+
+// Test potentiometer... 
+/*
+	uint16_t currentPotValue = measurePotValue(); //analogRead(CONTROL_POT); 
+	bool potMoved = wasPotMoved(currentPotValue); 	//check if potentiometer was moved	
+	if (potMoved) 
+	{	
+		Serial.print("Pot Value");
+		Serial.println(currentPotValue);
+	} 
+*/	
 
 	}
 
@@ -406,7 +400,13 @@ sleepTimerReset();
 
 // The following code tares the scale for a new pull
 #ifdef ACAIA_LUNAR_INTEGRATION		
-		if(scaleConnected)	scale->tare();
+		if(scaleConnected)	
+		{
+			scale->tare();
+			scale->stopTimer();
+			scale->startTimer();
+		}
+		
 #endif
 
 		// Clear flowmeter counters and attach interrupt 
@@ -431,7 +431,8 @@ sleepTimerReset();
 		
 		// Megunolink graphing
 #ifdef MEGUNOLINK
-		megunolinkPlot.Clear();
+	//	megunolinkPlot.Clear();
+		megunolinkPlot.Run(true);
 #endif
 
 		// if system did not finish prepping a serial pull - do it now!
@@ -464,8 +465,8 @@ sleepTimerReset();
 		double currentPressure = measurePressure(); // We need the current pressure for the PID loop and stored for rolling average; and displayed
 
 		// flow measurement processing - capture two volatile variables before they change 
-		unsigned long capturedFlowPulseCount = g_flowPulseCount; 
-		long capturedFlowPulseMillis = g_flowPulseMillis;
+		uint32_t capturedFlowPulseCount = g_flowPulseCount; 
+		uint32_t capturedFlowPulseMillis = g_flowPulseMillis;
 #ifdef GICAR_FLOWMETER
 	    //Gicar flowmeters have very low pulse rates. To enhance resolution we will calculate the reciprocal of the time between pulses (1/T).
 		if (capturedFlowPulseMillis > lastFlowPulseMillis) // If there is a new flow meter pulse send the timing for flow rate calculation
@@ -528,12 +529,13 @@ sleepTimerReset();
 			
 			// Telemetry graphing
 #ifdef MEGUNOLINK
-			megunolinkPlot.SendFloatData("Bar", g_averageP.mean(), 1);
+			megunolinkPlot.SendFloatData("Pressure", g_averageP.mean(), 1);
 			megunolinkPlot.SendData("PWM", pumpPWM);
-			megunolinkPlot.SendData("pulses", lastFlowPulseCount);
-			megunolinkPlot.SendFloatData("ml/min", flowRate(preInfusion), 1);
+			megunolinkPlot.SendData("Flowmeter Pulses", lastFlowPulseCount);
+			megunolinkPlot.SendFloatData("FlowRate", flowRate(preInfusion), 0);
 #ifdef ACAIA_LUNAR_INTEGRATION
-			megunolinkPlot.SendFloatData("gr", scaleWeight, 1);
+			megunolinkPlot.SendFloatData("Weight", scaleWeight, 1);
+			megunolinkPlot.SendFloatData("FlowVolume", flowVolume(), 0);
 #endif			
 #endif 
 
@@ -545,8 +547,8 @@ sleepTimerReset();
 			mqtt.publish("/gs3/PWM", pumpPWM);
 #endif			
 
-			graphUpdate(pumpPWM, profileIndex, g_averageP.mean() * 100 / 12.0, g_flowPulseCount, false, preInfusion);
-
+			//drawGraphPixels(pumpPWM, profileIndex, g_averageP.mean() * 100 / 12.0, g_flowPulseCount, false, preInfusion);
+			drawGraphPixels(pumpPWM, profileIndex, g_averageP.mean(), g_flowPulseCount, false, preInfusion);
 			//reset variables for next 500mSec period... 
 			lastFlowPulseCount = g_flowPulseCount; 
 			lastProfileIndex = profileIndex;

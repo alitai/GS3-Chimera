@@ -12,13 +12,14 @@
 #define FLOW_PRESSURE_PROFILE 7					// FP: PID Flow (left side of paddle) up to unionThreshold. Then PP PID Pressure (right side of paddle)
 #define FLUSH 10
 
-// 3d5 buttons - choose the code above to change the pull modes
+// 3d5 buttons - choose the numerical code above to change the pull modes
 #define BUTTON_1 4                               // Leftmost button (single shot)
 #define BUTTON_2 6								 // Second button (double shot)
 #define BUTTON_3 7								 // Third button (single mug)
 #define BUTTON_4 0								 // 4th button (double mug)
 
 // For debugging, this sends the entire EEPROM content to the serial monitor
+// May be activated in the serial console by pressing Z
 //#define EEPROM_SERIAL_DOWNLOAD
 
 // Define MQTT channel
@@ -26,7 +27,7 @@
 
 // Megunolink telemetry
 // For use over an ESP8266 also needs the com0com com2tcp adapter. See https://hackaday.io/page/1304-virtual-serial-port-tunnel-to-use-with-esp-link.
-//#define MEGUNOLINK
+#define MEGUNOLINK
 
 // If the output relay inverts (like some modules do) uncomment the next line
 #define INVERT_FLB_OUTPUT
@@ -44,10 +45,6 @@
 // In device_HM10.h please set the proper scale MAC address as below
 // const char * mac = "001C971267DF"; 
 // #define ACAIA_SCALE_MAC "001C971267DF"
-
-// AUTO_SLEEP enables a sleep timer puts the GUI (but not the Arduino or peripherals) to sleep (in minutes)
-//#define AUTO_SLEEP 
-#define SLEEP_TIMER_MINUTES 5  
 
 //Flowmeter Selection
 //#define GICAR_FLOWMETER
@@ -158,8 +155,6 @@ D53 SD_NSS
 
 #define DISPLAY_ROTATION
 
-
-
 //***********************************************************************
 // PINS: Global Parameters and Variables & Arduino Mega R3 Pins
 //***********************************************************************
@@ -216,6 +211,17 @@ D53 SD_NSS
 #define VRES 320 /* Default screen resulution for Y axis */
 #endif
 
+// define Graph Size (note graph requires 11 more pixels undreneath the graph)
+#define GRAPH_X_0 3
+#define GRAPH_Y_0 309
+#define GRAPH_X_SPAN 237
+#define GRAPH_Y_SPAN 194
+#define GRAPH_PWM_SPAN 400 // in PWM - (0 - x)% for VNH5019 driver usually 0-400
+#define GRAPH_PRESSURE_SPAN 10 //in bar: 0-x bar usually 0-10 bar
+#define GRAPH_FLOW_VOLUME_SPAN 100 //in ml/min usually 0-90ml
+#define GRAPH_FLOW_RATE_SPAN 400 //in ml/min usually 0-400ml/min
+
+
 //***********************************************************************
 // Defaults for system parameters
 // NOTE: These are default parameters that are only used for new Arduinos (in which case they get written into the EEPROM as defaults). 
@@ -230,7 +236,10 @@ double unionThreshold = 4.0d; // in bar - at this point the system will switch f
 //************************************************************************
 // PID parameters
 //************************************************************************
-const unsigned PIDSampleTime = 25; // in mSec
+const uint16_t PIDSampleTime = 25; // in mSec
+#define PRESSURE_AVERAGES 4
+#define FLOW_AVERAGES_DIGMESA 100 // There are 20 Digmesa pulses for each Gicar pulse....
+#define FLOW_AVERAGES_GICAR 5
 
 // Pressure PID loop (pressure profiling)
 double Kpp = 60, Kpi = 20, Kpd = 3; 
@@ -252,11 +261,10 @@ double Kfp = 5, Kfi = 5, Kfd = 1;
 // 0-400 correlates to 0-100% PWM 
 // PWM speed is from -400 to 400. Pumps cannot be driven in reverse, so from 0-400. 
 //***********************************************************************
-unsigned FLBThresholdPWM = 60;
-unsigned  pumpMaxPWM = 220, pumpMinPWM = 0; 
-const unsigned slayerMaxPWM = 190; // Maximum - minimum pump PWM (0-400)
-unsigned slayerMainPWM = 160;
-const unsigned flushPWM = 168; // 42% PWM for flush and cleaning cycle
+uint16_t  pumpMaxPWM = 220, pumpMinPWM = 0, FLBThresholdPWM = 60, slayerMainPWM = 160; 
+const uint16_t slayerMaxPWM = 190,flushPWM = 168; // Maximum - minimum pump PWM (0-400)
+
+#define MAX_PROFILE_INDEX 250 ////Safety timer - after 120 seconds turn off pull... GS3 LU1.16 sets the maximum time at 120 seconds....
 
 // Removed FP and PP can correct up to y percent lower than profile PWM (double)
 //#define PWM_TRACK_UPPER_BOUND 15.0 // FP and PP can correct up to x percent higher than profile PWM (double)

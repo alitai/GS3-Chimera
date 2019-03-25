@@ -54,7 +54,7 @@ class DeviceHM10 : public Device {
   bool sendCommand(const char *cmd, const char *value);
   bool isDeviceConnected();
   bool checkConnectionStatus();
-  boolean initDevice();
+  bool initDevice();
   
 public:
   bool isNewConnection();

@@ -1,13 +1,20 @@
-byte shutdownIfPullOver(byte countOffCycles, int lastProfileIndex)
+byte shutdownIfPullOver(byte countOffCycles, uint16_t lastProfileIndex)
 {
-	if (digitalRead(GROUP_SOLENOID) == LOW && lastProfileIndex < 195)
+	if (digitalRead(GROUP_SOLENOID) == LOW && lastProfileIndex < MAX_PROFILE_INDEX) 
 		return debounceCount;
 	else
 		countOffCycles--;
 	
-	if (countOffCycles < 1 || lastProfileIndex > 199 || Serial2.available())
+	if (countOffCycles < 1 || lastProfileIndex > MAX_PROFILE_INDEX || Serial2.available()) 
 	{	
 		Serial.println("Shutting down pull...");
+#ifdef ACAIA_LUNAR_INTEGRATION
+	scale->pauseTimer();
+#endif
+#ifdef MEGUNOLINK
+	//	megunolinkPlot.Clear();
+		megunolinkPlot.Run(false);
+#endif
 		resetSystem();	
 	}
 	
@@ -24,7 +31,6 @@ void resetSystem()
 	g_activePull = false; 	// Pull is over!
 	g_newPull = false;		//
 	g_flushCycle = true; 	// be ready for the next cleaning cycle (not Serial port initiated)
-	sleepTimerReset();
 	
 	//*****************************************************************************
 	// Clear interrupt cache and attach interrupt - and be ready for next pull
