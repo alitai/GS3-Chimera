@@ -99,5 +99,17 @@
 		Corrected a situation where pull would stall and the ml/min would remain stuck
 		
 	v0.44
-		Added a directive to enable/disable sleep AUTO_SLEEP
+		Added a directive to enable/disable sleep AUTO_SLEEP (silly feature removed)
+		
+	v0.50
+		Added MAX_PROFILE_INDEX
+		Set timer timeout to MAX_PROFILE_INDEX
+		Set profiles to length of MAX_PROFILE_INDEX+1
+		Fixed many castings
+		Added "linearizing" overlap for FLB on Manual and OTTO control & FLB dead zone (to prevent solenoid rattling)
+		Removed sleep timer
+		Serial console now added a Z command to dump the EEPROM profiles
+		Auto start for Acaia timer
+		
+		
 */

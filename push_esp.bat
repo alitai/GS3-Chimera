@@ -1,0 +1,1 @@
+bash -c "/mnt/d/Users/assaf.HOME/Documents/ESP8266/esp-link-3.2.47.alpha/megaflash.sh 192.168.200.50 /mnt/d/Users/assaf.HOME/Documents/Arduino/GS3_Transformer/GS3_Transformer.ino.mega.hex"
